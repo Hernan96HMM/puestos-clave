@@ -129,3 +129,69 @@ insert into respuesta_pregunta (evaluacion_id, pregunta_id)
 select e.id, pr.id
 from evaluacion e
 cross join pregunta pr;
+
+-- 6. Datos históricos reales (5 puestos ya evaluados en los Excel de origen).
+-- evaluador, fecha_evaluacion y justificacion quedan en null: así están en el
+-- Excel real para estos 5 puestos, y la regla "justificación obligatoria si
+-- puntaje >= 3" es una validación de aplicación, no una restricción de la base.
+update respuesta_pregunta rp
+set puntaje = rs.puntaje
+from (values
+  ('admin-y-finanzas', 'Encargado de Tesorería', 1, 5),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 2, 3),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 3, 4),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 4, 3),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 5, 1),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 6, 4),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 7, 5),
+  ('admin-y-finanzas', 'Encargado de Tesorería', 8, 3),
+
+  ('compras', 'Comprador Jr.', 1, 4),
+  ('compras', 'Comprador Jr.', 2, 3),
+  ('compras', 'Comprador Jr.', 3, 3),
+  ('compras', 'Comprador Jr.', 4, 3),
+  ('compras', 'Comprador Jr.', 5, 4),
+  ('compras', 'Comprador Jr.', 6, 3),
+  ('compras', 'Comprador Jr.', 7, 3),
+  ('compras', 'Comprador Jr.', 8, 3),
+  ('compras', 'Comprador Jr.', 9, 3),
+  ('compras', 'Comprador Jr.', 10, 3),
+
+  ('radiologia', 'Radiólogo (N1)', 1, 5),
+  ('radiologia', 'Radiólogo (N1)', 2, 4),
+  ('radiologia', 'Radiólogo (N1)', 3, 4),
+  ('radiologia', 'Radiólogo (N1)', 4, 4),
+  ('radiologia', 'Radiólogo (N1)', 5, 5),
+  ('radiologia', 'Radiólogo (N1)', 6, 5),
+  ('radiologia', 'Radiólogo (N1)', 7, 5),
+  ('radiologia', 'Radiólogo (N1)', 8, 5),
+  ('radiologia', 'Radiólogo (N1)', 9, 3),
+  ('radiologia', 'Radiólogo (N1)', 10, 1),
+
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 1, 4),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 2, 4),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 3, 4),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 4, 4),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 5, 5),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 6, 5),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 7, 5),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 8, 5),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 9, 4),
+  ('recursos-humanos', 'Responsable Administrativo de Recursos Humanos', 10, 4),
+
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 1, 3),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 2, 4),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 3, 3),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 4, 3),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 5, 4),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 6, 2),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 7, 3),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 8, 3),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 9, 4),
+  ('sig-y-medio-ambiente', 'Asistente de Gestión de Calidad', 10, 2)
+) as rs(sector_slug, puesto_nombre, pregunta_numero, puntaje)
+join sector s on s.slug = rs.sector_slug
+join puesto p on p.sector_id = s.id and p.nombre = rs.puesto_nombre
+join evaluacion e on e.puesto_id = p.id
+join pregunta pr on pr.numero = rs.pregunta_numero
+where rp.evaluacion_id = e.id and rp.pregunta_id = pr.id;
