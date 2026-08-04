@@ -2,6 +2,17 @@
 
 Run this on a machine with Docker running, after pulling the repo.
 
+## 0. Pre-flight (no Docker required)
+
+Install dependencies (this also installs the pinned `supabase` CLI from
+`package.json`'s devDependencies, so `npx supabase` below resolves to the
+exact version the migrations/config were authored against, not whatever is
+latest on the day you run this) and run the cheap offline checks before
+touching Docker:
+
+    npm ci
+    npm run lint:sql && npm run verify:seed-counts && npm run verify:real-scores
+
 ## 1. Apply migrations + seed to a local Supabase instance
 
     npx supabase start

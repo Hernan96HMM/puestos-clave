@@ -1,4 +1,4 @@
-create view vista_evaluacion_calculada as
+create view vista_evaluacion_calculada with (security_invoker = true) as
 with base as (
   select
     e.id as evaluacion_id,

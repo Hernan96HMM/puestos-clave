@@ -1,5 +1,5 @@
 {
-  "name": "data-model-seed",
+  "name": "puestos-clave",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -24,6 +24,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "node-sql-parser": "^5.4.0",
+    "supabase": "2.111.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
