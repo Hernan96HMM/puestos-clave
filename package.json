@@ -9,22 +9,24 @@
     "lint": "eslint",
     "lint:sql": "node scripts/lint-sql.mjs",
     "verify:seed-counts": "node scripts/verify-seed-counts.mjs",
-    "verify:real-scores": "node scripts/verify-real-scores.mjs"
+    "verify:real-scores": "node scripts/verify-real-scores.mjs",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "next": "16.3.0",
+    "pg": "^8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "node-sql-parser": "^5.4.0",
-    "supabase": "2.111.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

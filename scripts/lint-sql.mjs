@@ -4,14 +4,14 @@ const { Parser } = pkg;
 
 const parser = new Parser();
 
-const migrationFiles = existsSync("supabase/migrations")
-  ? readdirSync("supabase/migrations")
+const migrationFiles = existsSync("db/migrations")
+  ? readdirSync("db/migrations")
       .filter((f) => f.endsWith(".sql"))
       .sort()
-      .map((f) => `supabase/migrations/${f}`)
+      .map((f) => `db/migrations/${f}`)
   : [];
 
-const files = [...migrationFiles, "supabase/seed.sql"].filter(existsSync);
+const files = [...migrationFiles, "db/seed.sql"].filter(existsSync);
 
 let ok = true;
 for (const file of files) {

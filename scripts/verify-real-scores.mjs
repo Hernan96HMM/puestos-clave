@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 
-const sql = readFileSync("supabase/seed.sql", "utf8");
+const sql = readFileSync("db/seed.sql", "utf8");
 
 const blockMatch = sql.match(
   /update respuesta_pregunta[\s\S]*?from \(values([\s\S]*?)\) as rs\(sector_slug, puesto_nombre, pregunta_numero, puntaje\)/
 );
 if (!blockMatch) {
-  console.error("Could not find the real-scores values block in supabase/seed.sql");
+  console.error("Could not find the real-scores values block in db/seed.sql");
   process.exit(1);
 }
 const block = blockMatch[1];

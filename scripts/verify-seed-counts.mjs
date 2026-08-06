@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 
-const sql = readFileSync("supabase/seed.sql", "utf8");
+const sql = readFileSync("db/seed.sql", "utf8");
 
 const blockMatch = sql.match(
   /insert into puesto[\s\S]*?\) as v\(sector_slug, nombre, orden\)/
 );
 if (!blockMatch) {
-  console.error("Could not find the puesto insert block in supabase/seed.sql");
+  console.error("Could not find the puesto insert block in db/seed.sql");
   process.exit(1);
 }
 const block = blockMatch[0];
