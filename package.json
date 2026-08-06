@@ -10,6 +10,7 @@
     "lint:sql": "node scripts/lint-sql.mjs",
     "verify:seed-counts": "node scripts/verify-seed-counts.mjs",
     "verify:real-scores": "node scripts/verify-real-scores.mjs",
+    "verify:rls": "node scripts/verify-rls.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:set-app-password": "node scripts/set-app-role-password.mjs"
   },
