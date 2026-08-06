@@ -1,6 +1,6 @@
 # F-116 Puestos Clave — Phase 2: Auth + Roles + RLS (self-hosted, no Supabase)
 
-**Status:** Draft for review
+**Status:** Approved, with 2 corrections applied per `PROMPT_Fase2_Implementacion.md` (security_invoker explicit on 0004, no INSERT grant/policy — UPDATE only on 0006/0007)
 **Scope:** Login propio (Auth.js v5, Credentials) + RLS real en Postgres self-hosted + Next.js containerizado detrás de Nginx (host). Navbar consciente de rol/sector. El formulario completo de 10 preguntas y el dashboard MAESTRO con gráficos siguen siendo Fase 3 — esta fase construye lo mínimo necesario para probar que un gerente de un sector puede escribir en el suyo y es rechazado **en la base de datos** al intentar escribir en otro.
 
 ## Context
@@ -78,7 +78,65 @@ create table validacion_puesto (
 );
 ```
 
-**`db/migrations/0004_update_vista_calculada.sql`** — `create or replace view` de `vista_evaluacion_calculada` (Fase 1), reemplazando la referencia directa a `e.validacion_direccion` dentro del CTE `base` por `left join validacion_puesto vp on vp.evaluacion_id = e.id` y `coalesce(vp.estado, 'pendiente') as validacion_direccion` en el `select` final — mismo nombre de columna que el dashboard de Fase 1 ya espera, mismo resto de la fórmula (sin tocar nada del cálculo, ya verificado contra los 5 casos reales). Después de esta migración, la vista ya no depende de la columna de `evaluacion`.
+**`db/migrations/0004_update_vista_calculada.sql`** — `create or replace view`, reemplazando la referencia directa a `e.validacion_direccion` dentro del CTE `base` por `left join validacion_puesto vp on vp.evaluacion_id = e.id` y `coalesce(vp.estado, 'pendiente') as validacion_direccion` en el `select` final — mismo nombre de columna que el dashboard de Fase 1 ya espera, mismo resto de la fórmula (sin tocar nada del cálculo, ya verificado contra los 5 casos reales). `create or replace view` **no hereda** `with (security_invoker = true)` de la versión anterior — hay que repetirlo explícitamente en la misma sentencia, si no la vista vuelve a quedar security-definer sin que nada lo avise:
+
+```sql
+create or replace view vista_evaluacion_calculada with (security_invoker = true) as
+with base as (
+  select
+    e.id as evaluacion_id,
+    e.puesto_id,
+    p.sector_id,
+    p.nombre as puesto_nombre,
+    e.evaluador,
+    e.fecha_evaluacion,
+    coalesce(vp.estado, 'pendiente') as validacion_direccion,
+    round(
+      coalesce(
+        sum(pr.peso_pct * rp.puntaje) filter (where rp.puntaje is not null)
+          / nullif(sum(pr.peso_pct) filter (where rp.puntaje is not null), 0)
+          / 5 * 100,
+        0
+      ),
+      1
+    ) as puntaje_ponderado_pct
+  from evaluacion e
+  join puesto p on p.id = e.puesto_id
+  left join validacion_puesto vp on vp.evaluacion_id = e.id
+  left join respuesta_pregunta rp on rp.evaluacion_id = e.id
+  left join pregunta pr on pr.id = rp.pregunta_id
+  group by e.id, p.sector_id, p.nombre, e.evaluador, e.fecha_evaluacion, vp.estado
+)
+select
+  *,
+  case
+    when puntaje_ponderado_pct >= 70 then 'PUESTO CLAVE'
+    when puntaje_ponderado_pct >= 50 then 'PUESTO DE ATENCIÓN'
+    else 'NO ES PUESTO CLAVE'
+  end as clasificacion,
+  case
+    when puntaje_ponderado_pct >= 70 then 'ALTO'
+    when puntaje_ponderado_pct >= 50 then 'MEDIO'
+    else 'BAJO'
+  end as nivel_riesgo,
+  case
+    when puntaje_ponderado_pct >= 70 then '🔴'
+    when puntaje_ponderado_pct >= 50 then '🟡'
+    else '🟢'
+  end as semaforo
+from base;
+```
+
+`coalesce(vp.estado, 'pendiente')` cubre el caso transitorio entre la migración 0004 (que ya corre con esta vista nueva) y la 0005 (que todavía no migró los datos de `evaluacion.validacion_direccion` a `validacion_puesto`) — en ese punto intermedio `validacion_puesto` está vacía y la vista debe seguir devolviendo `'pendiente'`, no `null`, para no romper nada que ya lea esta columna del dashboard de Fase 1.
+
+Verificación de que `security_invoker` quedó seteado tras el `CREATE OR REPLACE` (se agrega al runbook de aceptación):
+
+```sql
+select relname, reloptions
+from pg_class
+where relname = 'vista_evaluacion_calculada';
+-- reloptions debe incluir security_invoker=true
+```
 
 **`db/migrations/0005_drop_validacion_direccion_column.sql`** — ahora sí, seguro:
 
@@ -119,9 +177,11 @@ grant usage on schema public to puestos_clave_app;
 
 grant select on sector, puesto, pregunta to puestos_clave_app;
 grant select on perfil to puestos_clave_app; -- para el authorize() del login
-grant select, insert, update on evaluacion, respuesta_pregunta, validacion_puesto to puestos_clave_app;
+grant select, update on evaluacion, respuesta_pregunta, validacion_puesto to puestos_clave_app;
 grant select on vista_evaluacion_calculada to puestos_clave_app;
 ```
+
+Sin `insert` en `evaluacion`/`respuesta_pregunta`/`validacion_puesto`: el diseño de Fase 1 (`docs/superpowers/specs/2026-08-04-data-model-seed-design.md`) es explícito en que el formulario hace `UPDATE` sobre las filas pre-seedeadas (76 `evaluacion` + 760 `respuesta_pregunta` ya existen desde Fase 1; `validacion_puesto` se llena por la migración 0005, no por la app), nunca `INSERT` — mínimo privilegio real, no solo declarado. Si una feature futura (ej. "agregar puesto nuevo") necesita `INSERT`, se agrega en el momento en que se diseñe esa feature, no antes.
 
 La contraseña del rol se setea aparte, fuera de git, con `scripts/set-app-role-password.mjs` (usa `pg`, toma `POSTGRES_APP_PASSWORD` de env, corre `ALTER ROLE puestos_clave_app WITH PASSWORD '<valor>'` una vez por entorno — idempotente, sin riesgo de inyección porque el valor viene de una env var propia, no de input de usuario).
 
@@ -155,7 +215,7 @@ create policy evaluacion_write on evaluacion for update using (
   )
 );
 
-create policy respuesta_pregunta_write on respuesta_pregunta for all with check (
+create policy respuesta_pregunta_write on respuesta_pregunta for update using (
   current_setting('app.rol', true) = 'gerente'
   and exists (
     select 1 from evaluacion e
@@ -163,7 +223,7 @@ create policy respuesta_pregunta_write on respuesta_pregunta for all with check 
     where e.id = respuesta_pregunta.evaluacion_id
       and p.sector_id::text = current_setting('app.sector_id', true)
   )
-) using (
+) with check (
   current_setting('app.rol', true) = 'gerente'
   and exists (
     select 1 from evaluacion e
@@ -174,7 +234,7 @@ create policy respuesta_pregunta_write on respuesta_pregunta for all with check 
 );
 
 -- Dirección: solo puede tocar validacion_puesto, nunca respuesta_pregunta.
-create policy validacion_puesto_write on validacion_puesto for all using (
+create policy validacion_puesto_write on validacion_puesto for update using (
   current_setting('app.rol', true) = 'direccion'
 ) with check (
   current_setting('app.rol', true) = 'direccion'
@@ -183,7 +243,7 @@ create policy validacion_puesto_write on validacion_puesto for all using (
 
 Con contexto vacío (nadie llamó `set_config`), `current_setting('app.rol', true)` devuelve `NULL`; `NULL = 'gerente'` es `NULL` (no `true`), así que toda policy de escritura falla por default — el "sin contexto = default deny" pedido sale de esto, sin código extra.
 
-`respuesta_pregunta_write` usa `for all` (no solo insert) porque Fase 3 va a necesitar `UPDATE` sobre las mismas filas pre-seedeadas en blanco de Fase 1 (recordar: Fase 1 ya insertó las 760 filas con `puntaje = null`; el formulario de Fase 3 hace `UPDATE`, no `INSERT`).
+Las tres policies de escritura (`evaluacion_write`, `respuesta_pregunta_write`, `validacion_puesto_write`) usan `for update`, no `for all` — mínimo privilegio, consistente con que el `GRANT` de la sección 3 tampoco incluye `insert` ni `delete`. Ninguna fila nueva se crea desde la app en esta fase: las 76 `evaluacion` y 760 `respuesta_pregunta` vienen pre-seedeadas de Fase 1, y `validacion_puesto` se llena en la migración 0005, no en runtime.
 
 ---
 
