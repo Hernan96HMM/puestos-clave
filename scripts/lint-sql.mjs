@@ -1,8 +1,5 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
-import pkg from "node-sql-parser";
-const { Parser } = pkg;
-
-const parser = new Parser();
+import { parse } from "libpg-query";
 
 const migrationFiles = existsSync("db/migrations")
   ? readdirSync("db/migrations")
@@ -17,7 +14,7 @@ let ok = true;
 for (const file of files) {
   const sql = readFileSync(file, "utf8");
   try {
-    parser.astify(sql, { database: "postgresql" });
+    await parse(sql);
     console.log(`OK: ${file}`);
   } catch (e) {
     console.error(`FAIL: ${file}: ${e.message}`);

@@ -14,6 +14,7 @@
     "db:set-app-password": "node scripts/set-app-role-password.mjs"
   },
   "dependencies": {
+    "libpg-query": "^17.7.4",
     "next": "16.3.0",
     "pg": "^8.22.0",
     "react": "19.2.8",
@@ -27,7 +28,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
-    "node-sql-parser": "^5.4.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
