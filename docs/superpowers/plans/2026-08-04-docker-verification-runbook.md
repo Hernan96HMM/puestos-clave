@@ -1,3 +1,9 @@
+> **OBSOLETO (Fase 2):** Este runbook asume Supabase CLI (`supabase start`,
+> `supabase db reset`), que ya no se usa en el proyecto — Fase 2 lo reemplazó
+> por Postgres + Docker self-hosted. Se conserva como referencia histórica de
+> la decisión original de Fase 1. Usar
+> `docs/superpowers/plans/2026-08-04-fase2-verification-runbook.md` en su lugar.
+
 # Docker verification runbook — Phase 1 (data model + seed)
 
 Run this on a machine with Docker running, after pulling the repo.
