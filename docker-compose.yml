@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: puestos_clave_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: puestos_clave
+      POSTGRES_USER: puestos_clave_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puestos_clave_owner -d puestos_clave"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    container_name: puestos_clave_app
+    restart: unless-stopped
+    ports:
+      - "8097:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://puestos_clave_app:${POSTGRES_APP_PASSWORD}@postgres:5432/puestos_clave
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+volumes:
+  postgres_data:
