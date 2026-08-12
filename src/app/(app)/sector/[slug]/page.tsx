@@ -46,7 +46,11 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
               {p.semaforo} {p.clasificacion} ({p.puntaje_ponderado_pct}%)
             </span>
             {isDireccion ? (
-              <ValidacionSelect evaluacionId={p.evaluacion_id} estadoActual={p.validacion_direccion} />
+              <ValidacionSelect
+                evaluacionId={p.evaluacion_id}
+                estadoActual={p.validacion_direccion}
+                slug={slug}
+              />
             ) : (
               <span>{p.validacion_direccion}</span>
             )}
