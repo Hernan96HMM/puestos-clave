@@ -144,6 +144,42 @@ async function main() {
     report("7. SELECT funciona sin contexto", Number(rows[0].count) > 0);
   });
 
+  // Los casos 8 y 9 no prueban políticas RLS sino los GRANT del rol
+  // puestos_clave_app: aunque una política dejara pasar la fila, el rol no tiene
+  // INSERT en ninguna tabla ni UPDATE sobre sector/puesto/pregunta. Sin estos
+  // casos, agregar un `insert` de más a la migración 0006 pasaría inadvertido.
+  // Postgres rechaza por privilegios (SQLSTATE 42501) antes de evaluar RLS.
+
+  // 8. INSERT en respuesta_pregunta (el rol no tiene grant de INSERT) -> 42501
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "gerente", sectorId: comprasSectorId });
+    try {
+      await client.query(
+        `insert into respuesta_pregunta (evaluacion_id, pregunta_id, puntaje)
+         values ($1, (select id from pregunta where numero = 1), 3)`,
+        [comprasEvaluacionId]
+      );
+      report("8. INSERT en respuesta_pregunta rechazado por falta de grant", false, "el insert tuvo éxito");
+    } catch (error) {
+      report(
+        "8. INSERT en respuesta_pregunta rechazado por falta de grant",
+        error.code === "42501",
+        `code=${error.code}`
+      );
+    }
+  });
+
+  // 9. UPDATE sobre sector (tabla de sólo lectura para el rol) -> 42501
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "direccion", sectorId: null });
+    try {
+      await client.query("update sector set nombre = 'x' where id = $1", [comprasSectorId]);
+      report("9. UPDATE en sector rechazado por falta de grant", false, "el update tuvo éxito");
+    } catch (error) {
+      report("9. UPDATE en sector rechazado por falta de grant", error.code === "42501", `code=${error.code}`);
+    }
+  });
+
   await pool.end();
 
   console.log(`\n${passed} passed, ${failed} failed`);
