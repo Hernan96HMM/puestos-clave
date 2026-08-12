@@ -22,10 +22,13 @@ services:
     restart: unless-stopped
     ports:
       - "8097:3000"
-    env_file:
-      - .env
+    # Sin `env_file: .env`: eso inyectaba el archivo entero (DATABASE_URL_OWNER,
+    # POSTGRES_*_PASSWORD, SEED_PASSWORD_*) en el contenedor de la app. La app
+    # sólo necesita estas tres variables.
     environment:
       DATABASE_URL: postgresql://puestos_clave_app:${POSTGRES_APP_PASSWORD}@postgres:5432/puestos_clave
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
     depends_on:
       postgres:
         condition: service_healthy

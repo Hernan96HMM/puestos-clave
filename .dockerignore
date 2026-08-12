@@ -1,0 +1,31 @@
+# Host-built dependencies must never overwrite the Linux ones `npm ci` builds in
+# the `deps` stage (the Dockerfile's `COPY . .` runs after the node_modules copy).
+node_modules
+
+# Build output — regenerated inside the image.
+.next
+out
+build
+
+# VCS and tooling
+.git
+.gitignore
+.claude
+.superpowers
+
+# Secrets: .env holds DATABASE_URL_OWNER, POSTGRES_*_PASSWORD and SEED_PASSWORD_*
+# and must never enter the build context.
+.env
+.env.*
+
+# Docs not needed by the build
+docs
+*.md
+
+# Misc
+Dockerfile
+.dockerignore
+docker-compose.yml
+npm-debug.log*
+*.tsbuildinfo
+coverage
