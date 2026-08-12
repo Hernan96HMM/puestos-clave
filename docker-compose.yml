@@ -1,16 +1,24 @@
 services:
-  postgres:
-    image: postgres:17
-    container_name: puestos_clave_db
+  puestosclave_db:
+    image: postgres:16-alpine
+    container_name: puestosclave_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: puestos_clave
       POSTGRES_USER: puestos_clave_owner
       POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD}
     ports:
+      # Loopback-only: para psql/debug manual desde el host. Nada corre en
+      # producción contra este puerto — la app usa el hostname interno
+      # `puestosclave_db` vía sicalab_default, y las migraciones/seeds
+      # corren con `docker exec -e DATABASE_URL_OWNER=... sicalab-puestosclave-1
+      # npm run db:...` (ver runbook), no desde el host.
       - "127.0.0.1:55432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Bind mount real, no volumen nombrado — la carpeta debe existir con
+      # `chown -R 70:70` (UID/GID del usuario `postgres` en la imagen alpine)
+      # ANTES del primer `docker compose up`, ver runbook.
+      - /mnt/disco1/sicalab/puestos-clave/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U puestos_clave_owner -d puestos_clave"]
       interval: 5s
@@ -18,19 +26,27 @@ services:
       retries: 10
   app:
     build: .
-    container_name: puestos_clave_app
+    container_name: sicalab-puestosclave-1
     restart: unless-stopped
     ports:
       - "8097:3000"
     # Sin `env_file: .env`: eso inyectaba el archivo entero (DATABASE_URL_OWNER,
     # POSTGRES_*_PASSWORD, SEED_PASSWORD_*) en el contenedor de la app. La app
-    # sólo necesita estas tres variables.
+    # en runtime sólo necesita estas variables — DATABASE_URL_OWNER se pasa
+    # puntualmente vía `docker exec -e` cuando hace falta correr un script de
+    # deploy, nunca queda residente en el proceso principal.
     environment:
-      DATABASE_URL: postgresql://puestos_clave_app:${POSTGRES_APP_PASSWORD}@postgres:5432/puestos_clave
+      # Fix del bug de healthcheck que hubo con inducciones: sin esto, el
+      # server standalone de Next.js puede terminar bindeando solo a la IP
+      # interna del contenedor en vez de a todas las interfaces.
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: postgresql://puestos_clave_app:${POSTGRES_APP_PASSWORD}@puestosclave_db:5432/puestos_clave
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_URL: ${AUTH_URL}
+      # Auth.js detrás de Nginx sobre HTTP interno (mismo fix que inducciones).
+      AUTH_TRUST_HOST: "true"
     depends_on:
-      postgres:
+      puestosclave_db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
@@ -38,5 +54,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-volumes:
-  postgres_data:
+networks:
+  default:
+    name: sicalab_default
+    external: true

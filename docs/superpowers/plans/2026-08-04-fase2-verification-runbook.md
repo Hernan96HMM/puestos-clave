@@ -1,3 +1,13 @@
+> **OBSOLETO (integración sicalab):** Los comandos `docker compose` de este
+> runbook usaban el `docker-compose.yml` standalone (contenedores
+> `puestos_clave_db`/`puestos_clave_app`, red propia, Postgres 17, volumen
+> nombrado). Ese compose fue reemplazado por la integración al stack
+> sicalab (contenedores `puestosclave_db`/`sicalab-puestosclave-1`, red
+> `sicalab_default`, Postgres 16-alpine, bind mount). Se conserva como
+> referencia de las queries de aceptación (siguen siendo válidas). Usar
+> `docs/superpowers/plans/2026-08-12-sicalab-integration-runbook.md` para
+> los pasos de deploy reales.
+
 # Fase 2 verification runbook — self-hosted auth + RLS
 
 Correr esto en un server con Docker (reemplaza al runbook de Fase 1, que
