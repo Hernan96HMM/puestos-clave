@@ -1,5 +1,3 @@
-create extension if not exists pgcrypto with schema extensions;
-
 create table sector (
   id uuid primary key default gen_random_uuid(),
   nombre text not null,

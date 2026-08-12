@@ -195,3 +195,12 @@ join puesto p on p.sector_id = s.id and p.nombre = rs.puesto_nombre
 join evaluacion e on e.puesto_id = p.id
 join pregunta pr on pr.numero = rs.pregunta_numero
 where rp.evaluacion_id = e.id and rp.pregunta_id = pr.id;
+
+-- Cada evaluación necesita su fila en validacion_puesto (estado 'pendiente' por
+-- defecto). El backfill de la migración 0005 corre antes de este seed en una
+-- instalación limpia, así que ahí no hay evaluaciones que copiar; sin este
+-- insert la tabla queda vacía y la acción de dirección nunca afecta filas.
+-- Idempotente: el `where not exists` lo hace seguro en cualquier orden.
+insert into validacion_puesto (evaluacion_id)
+select id from evaluacion
+where not exists (select 1 from validacion_puesto vp where vp.evaluacion_id = evaluacion.id);
