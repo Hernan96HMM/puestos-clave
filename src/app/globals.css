@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #21396e;
+  --primary-hover: #17294f;
+  --secondary: #2ba5d6;
+  --secondary-hover: #228bb4;
+  --secondary-bg: #e6f4fa;
+  --bg: #ffffff;
+  --bg-subtle: #f5f7fa;
+  --border: #e2e8f0;
+  --text: #171923;
+  --text-muted: #5a6472;
+  --risk-high: #dc2626;
+  --risk-high-bg: #fee2e2;
+  --risk-medium: #d97706;
+  --risk-medium-bg: #fef3c7;
+  --risk-low: #16a34a;
+  --risk-low-bg: #dcfce7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-bg: var(--secondary-bg);
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-bg: var(--risk-high-bg);
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-medium-bg: var(--risk-medium-bg);
+  --color-risk-low: var(--risk-low);
+  --color-risk-low-bg: var(--risk-low-bg);
+  --font-sans: var(--font-titillium);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans), sans-serif;
 }
