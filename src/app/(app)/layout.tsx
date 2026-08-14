@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { query } from "@/lib/db/query";
+import { Button } from "@/components/ui/Button";
 import { Navbar } from "./components/Navbar";
 
 type SectorRow = {
@@ -23,8 +24,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-bg">
       <header className="border-b border-border bg-bg">
-        <div className="mx-auto max-w-5xl px-4 pt-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-4">
           <h1 className="text-lg font-bold text-primary">F-116 · Puestos Clave</h1>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <Button type="submit" variant="ghost">
+              Cerrar sesión
+            </Button>
+          </form>
         </div>
         <Navbar sectores={sectores} rol={session.user.rol} sectorId={session.user.sectorId} />
       </header>
