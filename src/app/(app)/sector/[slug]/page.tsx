@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { query } from "@/lib/db/query";
+import { Card } from "@/components/ui/Card";
+import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { ValidacionSelect } from "./ValidacionSelect";
 
 type PuestoRow = {
@@ -11,6 +13,18 @@ type PuestoRow = {
   nivel_riesgo: string;
   semaforo: string;
   validacion_direccion: string;
+};
+
+const RIESGO_VARIANT: Record<string, BadgeVariant> = {
+  ALTO: "riesgo-alto",
+  MEDIO: "riesgo-medio",
+  BAJO: "riesgo-bajo",
+};
+
+const VALIDACION_VARIANT: Record<string, BadgeVariant> = {
+  pendiente: "validacion-pendiente",
+  aprobado: "validacion-aprobado",
+  observado: "validacion-observado",
 };
 
 export default async function SectorPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -36,27 +50,31 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
   const isDireccion = session.user.rol === "direccion";
 
   return (
-    <main>
-      <h1>{sector.nombre}</h1>
-      <ul>
+    <div>
+      <h1 className="mb-4 text-xl font-bold text-primary">{sector.nombre}</h1>
+      <div className="flex flex-col gap-3">
         {puestos.map((p) => (
-          <li key={p.evaluacion_id}>
-            <span>{p.puesto_nombre}</span>
-            <span>
-              {p.semaforo} {p.clasificacion} ({p.puntaje_ponderado_pct}%)
-            </span>
+          <Card
+            key={p.evaluacion_id}
+            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span className="font-medium text-text">{p.puesto_nombre}</span>
+            <div className="flex items-center gap-2">
+              <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
+                {p.clasificacion}
+              </Badge>
+              <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
+            </div>
             {isDireccion ? (
-              <ValidacionSelect
-                evaluacionId={p.evaluacion_id}
-                estadoActual={p.validacion_direccion}
-                slug={slug}
-              />
+              <ValidacionSelect evaluacionId={p.evaluacion_id} estadoActual={p.validacion_direccion} slug={slug} />
             ) : (
-              <span>{p.validacion_direccion}</span>
+              <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
+                {p.validacion_direccion}
+              </Badge>
             )}
-          </li>
+          </Card>
         ))}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }
