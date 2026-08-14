@@ -21,9 +21,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div>
-      <Navbar sectores={sectores} rol={session.user.rol} sectorId={session.user.sectorId} />
-      <main>{children}</main>
+    <div className="min-h-screen bg-bg">
+      <header className="border-b border-border bg-bg">
+        <div className="mx-auto max-w-5xl px-4 pt-4">
+          <h1 className="text-lg font-bold text-primary">F-116 · Puestos Clave</h1>
+        </div>
+        <Navbar sectores={sectores} rol={session.user.rol} sectorId={session.user.sectorId} />
+      </header>
+      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
     </div>
   );
 }
