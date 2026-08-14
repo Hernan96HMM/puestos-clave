@@ -6,16 +6,17 @@
   --secondary: #2ba5d6;
   --secondary-hover: #228bb4;
   --secondary-bg: #e6f4fa;
+  --secondary-text: #14688c;
   --bg: #ffffff;
   --bg-subtle: #f5f7fa;
   --border: #e2e8f0;
   --text: #171923;
   --text-muted: #5a6472;
-  --risk-high: #dc2626;
+  --risk-high: #b91c1c;
   --risk-high-bg: #fee2e2;
-  --risk-medium: #d97706;
+  --risk-medium: #92400e;
   --risk-medium-bg: #fef3c7;
-  --risk-low: #16a34a;
+  --risk-low: #15803d;
   --risk-low-bg: #dcfce7;
 }
 
@@ -25,6 +26,7 @@
   --color-secondary: var(--secondary);
   --color-secondary-hover: var(--secondary-hover);
   --color-secondary-bg: var(--secondary-bg);
+  --color-secondary-text: var(--secondary-text);
   --color-bg: var(--bg);
   --color-bg-subtle: var(--bg-subtle);
   --color-border: var(--border);
@@ -39,8 +41,10 @@
   --font-sans: var(--font-titillium);
 }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans), sans-serif;
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans), sans-serif;
+  }
 }

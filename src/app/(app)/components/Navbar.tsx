@@ -30,6 +30,7 @@ export function Navbar({
           <Link
             key={sector.id}
             href={`/sector/${sector.slug}`}
+            aria-current={isActive ? "page" : undefined}
             className={`flex shrink-0 flex-col items-center gap-1 border-b-2 px-1 py-2 text-sm font-medium transition-colors ${
               isActive ? "border-secondary text-primary" : "border-transparent text-text-muted hover:text-primary"
             }`}

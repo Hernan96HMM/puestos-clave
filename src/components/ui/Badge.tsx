@@ -17,7 +17,7 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   "validacion-pendiente": "bg-bg-subtle text-text-muted",
   "validacion-aprobado": "bg-risk-low-bg text-risk-low",
   "validacion-observado": "bg-risk-medium-bg text-risk-medium",
-  editable: "bg-secondary-bg text-secondary",
+  editable: "bg-secondary-bg text-secondary-text",
   "solo-lectura": "bg-bg-subtle text-text-muted",
 };
 
