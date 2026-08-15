@@ -108,7 +108,7 @@ export function PuestoEvaluacionForm({
           const requiereJustificacion = respuesta.puntaje !== null && respuesta.puntaje >= 3;
           return (
             <div key={p.preguntaId} className="flex flex-col gap-2 border-t border-border pt-3">
-              <p id={`pregunta-${p.preguntaId}`} className="text-sm text-text">
+              <p id={`pregunta-${evaluacionId}-${p.preguntaId}`} className="text-sm text-text">
                 <span className="font-medium">{p.numero}.</span> {p.texto}
               </p>
               <p className="text-xs text-text-muted">
@@ -119,7 +119,7 @@ export function PuestoEvaluacionForm({
                 value={respuesta.puntaje === null ? "NA" : String(respuesta.puntaje)}
                 onChange={(e) => actualizarPuntaje(p.preguntaId, e.target.value)}
                 disabled={pending}
-                aria-labelledby={`pregunta-${p.preguntaId}`}
+                aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
                 className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {OPCIONES_PUNTAJE.map((o) => (
@@ -134,7 +134,7 @@ export function PuestoEvaluacionForm({
                 onChange={(e) => actualizarJustificacion(p.preguntaId, e.target.value)}
                 required={requiereJustificacion}
                 disabled={pending}
-                aria-labelledby={`pregunta-${p.preguntaId}`}
+                aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
                 rows={2}
                 placeholder={
                   requiereJustificacion
