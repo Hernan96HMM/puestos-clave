@@ -76,7 +76,7 @@ export async function updateEvaluacionAction(
       async (client) => {
         let count = 0;
         const evalResult = await client.query(
-          "update evaluacion set evaluador = $1, fecha_evaluacion = $2 where id = $3 returning id",
+          "update evaluacion set evaluador = $1, fecha_evaluacion = $2, actualizado_en = now() where id = $3 returning id",
           [evaluador || null, fechaEvaluacion || null, evaluacionId]
         );
         count += evalResult.rowCount ?? 0;

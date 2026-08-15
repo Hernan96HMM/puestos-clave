@@ -92,17 +92,19 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
           isOwnSector ? (
             <Card key={p.evaluacion_id}>
               <details open={puestos.length === 1}>
-                <summary className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="font-medium text-text">{p.puesto_nombre}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
-                      {p.clasificacion}
+                <summary className="cursor-pointer">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-medium text-text">{p.puesto_nombre}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
+                        {p.clasificacion}
+                      </Badge>
+                      <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
+                    </div>
+                    <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
+                      {p.validacion_direccion}
                     </Badge>
-                    <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
                   </div>
-                  <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
-                    {p.validacion_direccion}
-                  </Badge>
                 </summary>
                 <PuestoEvaluacionForm
                   evaluacionId={p.evaluacion_id}

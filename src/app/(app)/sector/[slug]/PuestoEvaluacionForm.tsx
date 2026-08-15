@@ -81,14 +81,21 @@ export function PuestoEvaluacionForm({
 
       <div className="flex items-center justify-between rounded-md bg-secondary-bg px-3 py-2">
         <span className="text-sm font-medium text-secondary-text">Puntaje ponderado (en vivo)</span>
-        <span className="text-lg font-bold text-secondary-text">{puntajeEnVivo}%</span>
+        <span className="text-lg font-bold text-secondary-text">{puntajeEnVivo.toFixed(1)}%</span>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Evaluador" name="evaluador" defaultValue={evaluador ?? ""} disabled={pending} />
+        <Field
+          label="Evaluador"
+          name="evaluador"
+          id={`evaluador-${evaluacionId}`}
+          defaultValue={evaluador ?? ""}
+          disabled={pending}
+        />
         <Field
           label="Fecha de evaluación"
           name="fechaEvaluacion"
+          id={`fechaEvaluacion-${evaluacionId}`}
           type="date"
           defaultValue={fechaEvaluacion ?? ""}
           disabled={pending}
@@ -101,7 +108,7 @@ export function PuestoEvaluacionForm({
           const requiereJustificacion = respuesta.puntaje !== null && respuesta.puntaje >= 3;
           return (
             <div key={p.preguntaId} className="flex flex-col gap-2 border-t border-border pt-3">
-              <p className="text-sm text-text">
+              <p id={`pregunta-${p.preguntaId}`} className="text-sm text-text">
                 <span className="font-medium">{p.numero}.</span> {p.texto}
               </p>
               <p className="text-xs text-text-muted">
@@ -112,6 +119,7 @@ export function PuestoEvaluacionForm({
                 value={respuesta.puntaje === null ? "NA" : String(respuesta.puntaje)}
                 onChange={(e) => actualizarPuntaje(p.preguntaId, e.target.value)}
                 disabled={pending}
+                aria-labelledby={`pregunta-${p.preguntaId}`}
                 className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {OPCIONES_PUNTAJE.map((o) => (
@@ -126,6 +134,7 @@ export function PuestoEvaluacionForm({
                 onChange={(e) => actualizarJustificacion(p.preguntaId, e.target.value)}
                 required={requiereJustificacion}
                 disabled={pending}
+                aria-labelledby={`pregunta-${p.preguntaId}`}
                 rows={2}
                 placeholder={
                   requiereJustificacion
