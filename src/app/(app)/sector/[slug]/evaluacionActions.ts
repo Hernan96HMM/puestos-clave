@@ -12,6 +12,11 @@ export interface EvaluacionActionState {
 // Los 7 valores válidos del <select> por pregunta: "NA" (puntaje null) o "0"-"5".
 const PUNTAJES_VALIDOS = ["NA", "0", "1", "2", "3", "4", "5"] as const;
 
+// Marcador para distinguir, en el catch de abajo, "la policy de RLS filtró
+// alguna fila" de un fallo real de la base: se lanza DENTRO del callback de
+// withUserContext para que el COMMIT nunca llegue a ejecutarse (ver más abajo).
+class PermisoError extends Error {}
+
 export async function updateEvaluacionAction(
   _prevState: EvaluacionActionState,
   formData: FormData
@@ -65,9 +70,8 @@ export async function updateEvaluacionAction(
     respuestas.push({ preguntaId, puntaje, justificacion });
   }
 
-  let filasAfectadas: number;
   try {
-    filasAfectadas = await withUserContext(
+    await withUserContext(
       { id: session.user.id, rol: session.user.rol, sectorId: session.user.sectorId },
       async (client) => {
         let count = 0;
@@ -84,20 +88,26 @@ export async function updateEvaluacionAction(
           );
           count += result.rowCount ?? 0;
         }
-        return count;
+
+        // Menos filas afectadas que las esperadas (1 de evaluacion + N de
+        // respuestas) = la policy de RLS filtró alguna fila (sector ajeno) sin
+        // lanzar error. Se chequea DENTRO del callback y se lanza para que
+        // withUserContext haga ROLLBACK en vez de COMMIT: si el chequeo viviera
+        // afuera, para cuando corriera el COMMIT ya habría dejado firmes las
+        // filas que sí matchearon, aunque el resto no.
+        const filasEsperadas = 1 + respuestas.length;
+        if (count < filasEsperadas) {
+          throw new PermisoError();
+        }
       }
     );
-  } catch {
+  } catch (e) {
+    if (e instanceof PermisoError) {
+      return { error: "No tenés permiso para editar este puesto." };
+    }
     // Cualquier fallo real de la base (conexión, constraint inesperado): no es
-    // un problema de permisos, y mezclarlo con el caso de abajo confunde.
+    // un problema de permisos, y mezclarlo con el caso de arriba confunde.
     return { error: "Ocurrió un error, intentá de nuevo." };
-  }
-
-  // Menos filas afectadas que las esperadas (1 de evaluacion + N de respuestas)
-  // = la policy de RLS filtró alguna fila (sector ajeno) sin lanzar error.
-  const filasEsperadas = 1 + respuestas.length;
-  if (filasAfectadas < filasEsperadas) {
-    return { error: "No tenés permiso para editar este puesto." };
   }
 
   // La página se renderizó en el servidor con los valores viejos; sin esto
