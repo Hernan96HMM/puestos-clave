@@ -67,6 +67,7 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
     return [...resultado].sort((a, b) => {
       const va = a[columna];
       const vb = b[columna];
+      if (va === null && vb === null) return 0;
       if (va === null) return 1;
       if (vb === null) return -1;
       if (va < vb) return -1 * factor;
