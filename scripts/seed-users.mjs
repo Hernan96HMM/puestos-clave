@@ -17,6 +17,7 @@ const USERS = [
     sectorSlug: "compras",
     passwordEnv: "SEED_PASSWORD_GERENTE_COMPRAS",
     passwordDefault: "Compras123!",
+    accesoExtendido: false,
   },
   {
     email: "almacenes@test.local",
@@ -25,6 +26,7 @@ const USERS = [
     sectorSlug: "almacenes",
     passwordEnv: "SEED_PASSWORD_GERENTE_ALMACENES",
     passwordDefault: "Almacenes123!",
+    accesoExtendido: false,
   },
   {
     email: "direccion@test.local",
@@ -33,6 +35,25 @@ const USERS = [
     sectorSlug: null,
     passwordEnv: "SEED_PASSWORD_DIRECCION",
     passwordDefault: "Direccion123!",
+    accesoExtendido: false,
+  },
+  {
+    email: "rrhh@test.local",
+    nombre: "Gerente RRHH (prueba)",
+    rol: "gerente",
+    sectorSlug: "recursos-humanos",
+    passwordEnv: "SEED_PASSWORD_GERENTE_RRHH",
+    passwordDefault: "RRHH123!",
+    accesoExtendido: true,
+  },
+  {
+    email: "sig@test.local",
+    nombre: "Gerente SIG (prueba)",
+    rol: "gerente",
+    sectorSlug: "sig-y-medio-ambiente",
+    passwordEnv: "SEED_PASSWORD_GERENTE_SIG",
+    passwordDefault: "Sig123!",
+    accesoExtendido: true,
   },
 ];
 
@@ -51,16 +72,17 @@ async function main() {
         sectorId = rows[0].id;
       }
       await client.query(
-        `insert into perfil (email, password_hash, nombre, rol, sector_id)
-         values ($1, $2, $3, $4, $5)
+        `insert into perfil (email, password_hash, nombre, rol, sector_id, acceso_extendido)
+         values ($1, $2, $3, $4, $5, $6)
          on conflict (email) do update
            set password_hash = excluded.password_hash,
                nombre = excluded.nombre,
                rol = excluded.rol,
-               sector_id = excluded.sector_id`,
-        [u.email, passwordHash, u.nombre, u.rol, sectorId]
+               sector_id = excluded.sector_id,
+               acceso_extendido = excluded.acceso_extendido`,
+        [u.email, passwordHash, u.nombre, u.rol, sectorId, u.accesoExtendido]
       );
-      console.log(`OK: ${u.email} (${u.rol})`);
+      console.log(`OK: ${u.email} (${u.rol}${u.accesoExtendido ? ", acceso extendido" : ""})`);
     }
   } finally {
     client.release();

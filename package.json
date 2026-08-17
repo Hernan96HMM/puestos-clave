@@ -11,6 +11,7 @@
     "verify:seed-counts": "node scripts/verify-seed-counts.mjs",
     "verify:real-scores": "node scripts/verify-real-scores.mjs",
     "verify:rls": "node scripts/verify-rls.mjs",
+    "verify:acceso-extendido": "node scripts/verify-acceso-extendido.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:set-app-password": "node scripts/set-app-role-password.mjs",
     "db:seed": "node scripts/seed.mjs",
