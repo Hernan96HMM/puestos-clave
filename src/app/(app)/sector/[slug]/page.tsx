@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { query } from "@/lib/db/query";
+import { puedeVerTodo } from "@/lib/permisos";
 import { Card } from "@/components/ui/Card";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { ValidacionSelect } from "./ValidacionSelect";
@@ -53,6 +54,16 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
   const sector = sectorRows[0];
   if (!sector) notFound();
 
+  const isDireccion = session.user.rol === "direccion";
+  const isOwnSector = session.user.rol === "gerente" && session.user.sectorId === sector.id;
+
+  // Gerente sin acceso extendido intentando ver un sector ajeno por URL
+  // directa (la navbar de layout.tsx ya no le muestra el link, pero eso no
+  // basta como protección — hay que rechazarlo también acá, server-side).
+  if (!isOwnSector && !puedeVerTodo(session.user)) {
+    notFound();
+  }
+
   const puestos = await query<PuestoRow>(
     `select evaluacion_id, puesto_nombre, puntaje_ponderado_pct, clasificacion, nivel_riesgo, semaforo,
             validacion_direccion, evaluador, to_char(fecha_evaluacion, 'YYYY-MM-DD') as fecha_evaluacion
@@ -61,9 +72,6 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
      order by puesto_nombre`,
     [sector.id]
   );
-
-  const isDireccion = session.user.rol === "direccion";
-  const isOwnSector = session.user.rol === "gerente" && session.user.sectorId === sector.id;
 
   const preguntasPorEvaluacion = new Map<string, PreguntaRow[]>();
   if (isOwnSector) {

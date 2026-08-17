@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { query } from "@/lib/db/query";
+import { puedeVerTodo } from "@/lib/permisos";
 import { Button } from "@/components/ui/Button";
 import { Navbar } from "./components/Navbar";
 
@@ -17,9 +18,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/login");
   }
 
-  const sectores = await query<SectorRow>(
-    "select id, nombre, slug, orden from sector order by orden"
-  );
+  const extendido = puedeVerTodo(session.user);
+  const sectores = extendido
+    ? await query<SectorRow>("select id, nombre, slug, orden from sector order by orden")
+    : await query<SectorRow>("select id, nombre, slug, orden from sector where id = $1", [
+        session.user.sectorId,
+      ]);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -37,7 +41,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Button>
           </form>
         </div>
-        <Navbar sectores={sectores} rol={session.user.rol} sectorId={session.user.sectorId} />
+        <Navbar
+          sectores={sectores}
+          rol={session.user.rol}
+          sectorId={session.user.sectorId}
+          mostrarDashboard={extendido}
+        />
       </header>
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
     </div>
