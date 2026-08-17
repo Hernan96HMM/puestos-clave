@@ -4,6 +4,7 @@ declare module "next-auth" {
   interface User {
     rol: "gerente" | "direccion";
     sectorId: string | null;
+    accesoExtendido: boolean;
   }
 
   interface Session {
@@ -11,6 +12,7 @@ declare module "next-auth" {
       id: string;
       rol: "gerente" | "direccion";
       sectorId: string | null;
+      accesoExtendido: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -19,6 +21,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     rol: "gerente" | "direccion";
     sectorId: string | null;
+    accesoExtendido: boolean;
   }
 }
 
@@ -31,5 +34,6 @@ declare module "@auth/core/jwt" {
   interface JWT {
     rol: "gerente" | "direccion";
     sectorId: string | null;
+    accesoExtendido: boolean;
   }
 }

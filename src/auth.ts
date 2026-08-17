@@ -10,6 +10,7 @@ type PerfilRow = {
   nombre: string;
   rol: "gerente" | "direccion";
   sector_id: string | null;
+  acceso_extendido: boolean;
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -27,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (typeof email !== "string" || typeof password !== "string") return null;
 
         const rows = await query<PerfilRow>(
-          "select id, password_hash, nombre, rol, sector_id from perfil where email = $1",
+          "select id, password_hash, nombre, rol, sector_id, acceso_extendido from perfil where email = $1",
           [email]
         );
         const row = rows[0];
@@ -42,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: row.nombre,
           rol: row.rol,
           sectorId: row.sector_id,
+          accesoExtendido: row.acceso_extendido,
         };
       },
     }),
@@ -52,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.rol = user.rol;
         token.sectorId = user.sectorId;
+        token.accesoExtendido = user.accesoExtendido;
       }
       return token;
     },
@@ -60,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub as string;
         session.user.rol = token.rol;
         session.user.sectorId = token.sectorId;
+        session.user.accesoExtendido = token.accesoExtendido;
       }
       return session;
     },
