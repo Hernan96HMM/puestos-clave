@@ -1431,6 +1431,7 @@ A human with `DATABASE_URL`/`DATABASE_URL_OWNER` pointing at a real (or local) P
 1. `npm run db:migrate` — applies migration 0008.
 2. `npm run db:seed-users` — creates/updates all 5 test users, including the 2 new ones with `acceso_extendido = true`.
 3. `npm run verify:acceso-extendido` — confirms exactly `rrhh@test.local` and `sig@test.local` have the flag set.
+   - If testing with an account that was already logged in before this deploy (including a fresh `rrhh@test.local`/`sig@test.local` login for the first time after seeding), log out and back in — the `accesoExtendido` session field is only set on sign-in, so an existing session won't pick up a database change until re-authenticating.
 4. `npm run verify:rls` — confirms migration 0008 didn't disturb any RLS policy (it shouldn't have touched them at all, but this is cheap to re-confirm).
 5. `npm run dev`, then in a browser, using the credentials from `docs/superpowers/plans/2026-08-04-credenciales-prueba.md`:
    - **Gerente Compras** (no acceso extendido): navbar shows only "Compras". Typing `/sector/almacenes` directly in the URL bar → 404. No "MAESTRO" tab. Typing `/dashboard` directly → redirected back to `/sector/compras`. Logging in lands on `/sector/compras` (unchanged from Fase 3b).
