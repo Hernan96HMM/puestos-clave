@@ -10,4 +10,5 @@ export const CHART_COLORS = {
   riesgoBajo: "#15803d",
   secondary: "#2ba5d6",
   textMuted: "#5a6472",
+  border: "#e2e8f0",
 } as const;

@@ -44,13 +44,12 @@ export default async function DashboardPage() {
        from vista_evaluacion_calculada`
     ),
     query<DistribucionRow>(
-      `select clasificacion, count(*) as cantidad from vista_evaluacion_calculada group by clasificacion`
+      `select clasificacion, count(*) as cantidad from vista_evaluacion_calculada group by clasificacion order by clasificacion`
     ),
     query<PorSectorRow>(
-      `select s.nombre as sector, count(*) as cantidad
-       from vista_evaluacion_calculada v
-       join sector s on s.id = v.sector_id
-       where v.clasificacion = 'PUESTO CLAVE'
+      `select s.nombre as sector, count(v.evaluacion_id) filter (where v.clasificacion = 'PUESTO CLAVE') as cantidad
+       from sector s
+       left join vista_evaluacion_calculada v on v.sector_id = s.id
        group by s.nombre, s.orden
        order by s.orden`
     ),

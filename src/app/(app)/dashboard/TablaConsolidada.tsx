@@ -90,6 +90,7 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
         <select
           value={filtroSector}
           onChange={(e) => setFiltroSector(e.target.value)}
+          aria-label="Filtrar por sector"
           className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
         >
           <option value="">Todos los sectores</option>
@@ -102,6 +103,7 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
         <select
           value={filtroClasificacion}
           onChange={(e) => setFiltroClasificacion(e.target.value)}
+          aria-label="Filtrar por clasificación"
           className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary"
         >
           <option value="">Todas las clasificaciones</option>
@@ -120,11 +122,19 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
               {COLUMNAS.map((c) => (
                 <th
                   key={c.key}
-                  className="cursor-pointer select-none px-2 py-2 font-medium"
-                  onClick={() => alternarOrden(c.key)}
+                  className="px-2 py-2 font-medium"
+                  aria-sort={
+                    orden.columna === c.key ? (orden.direccion === "asc" ? "ascending" : "descending") : "none"
+                  }
                 >
-                  {c.label}
-                  {orden.columna === c.key && (orden.direccion === "asc" ? " ▲" : " ▼")}
+                  <button
+                    type="button"
+                    onClick={() => alternarOrden(c.key)}
+                    className="flex cursor-pointer select-none items-center gap-1 font-medium"
+                  >
+                    {c.label}
+                    {orden.columna === c.key && (orden.direccion === "asc" ? " ▲" : " ▼")}
+                  </button>
                 </th>
               ))}
               <th className="px-2 py-2 font-medium">Semáforo</th>
