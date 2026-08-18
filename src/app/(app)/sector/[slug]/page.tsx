@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { query } from "@/lib/db/query";
 import { puedeVerTodo } from "@/lib/permisos";
 import { Card } from "@/components/ui/Card";
+import { AnimatedCard } from "@/components/ui/AnimatedCard";
+import { AnimatedHeadline } from "@/components/ui/AnimatedHeadline";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { ValidacionSelect } from "./ValidacionSelect";
 import { PuestoEvaluacionForm } from "./PuestoEvaluacionForm";
@@ -94,11 +96,12 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold text-primary">{sector.nombre}</h1>
+      <AnimatedHeadline text={sector.nombre} className="mb-4 text-xl font-bold text-primary" />
       <div className="flex flex-col gap-3">
         {puestos.map((p) =>
           isOwnSector ? (
-            <Card key={p.evaluacion_id}>
+            <AnimatedCard key={p.evaluacion_id}>
+            <Card>
               <details open={puestos.length === 1}>
                 <summary className="cursor-pointer">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -131,11 +134,10 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                 />
               </details>
             </Card>
+            </AnimatedCard>
           ) : (
-            <Card
-              key={p.evaluacion_id}
-              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
+            <AnimatedCard key={p.evaluacion_id}>
+            <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium text-text">{p.puesto_nombre}</span>
               <div className="flex items-center gap-2">
                 <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
@@ -151,6 +153,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                 </Badge>
               )}
             </Card>
+            </AnimatedCard>
           )
         )}
       </div>

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Building2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
 
 interface Sector {
@@ -30,14 +31,19 @@ export function Navbar({
         <Link
           href="/dashboard"
           aria-current={pathname === "/dashboard" ? "page" : undefined}
-          className={`flex shrink-0 items-center gap-1.5 border-b-2 px-1 py-2 text-sm font-medium transition-colors ${
-            pathname === "/dashboard"
-              ? "border-secondary text-primary"
-              : "border-transparent text-text-muted hover:text-primary"
+          className={`relative flex shrink-0 items-center gap-1.5 px-1 py-2 text-sm font-medium transition-colors ${
+            pathname === "/dashboard" ? "text-primary" : "text-text-muted hover:text-primary"
           }`}
         >
           <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
           MAESTRO
+          {pathname === "/dashboard" && (
+            <motion.span
+              layoutId="nav-indicator"
+              className="absolute inset-x-0 -bottom-px h-0.5 bg-secondary"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
         </Link>
       )}
       {sectores.map((sector) => {
@@ -48,14 +54,24 @@ export function Navbar({
             key={sector.id}
             href={`/sector/${sector.slug}`}
             aria-current={isActive ? "page" : undefined}
-            className={`flex shrink-0 flex-col items-center gap-1 border-b-2 px-1 py-2 text-sm font-medium transition-colors ${
-              isActive ? "border-secondary text-primary" : "border-transparent text-text-muted hover:text-primary"
+            className={`relative flex shrink-0 flex-col items-center gap-1 px-1 py-2 text-sm font-medium transition-colors ${
+              isActive ? "text-primary" : "text-text-muted hover:text-primary"
             }`}
           >
-            <span className="whitespace-nowrap">{sector.nombre}</span>
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {sector.nombre}
+            </span>
             <Badge variant={isEditable ? "editable" : "solo-lectura"}>
               {isEditable ? "Editable" : "Solo lectura"}
             </Badge>
+            {isActive && (
+              <motion.span
+                layoutId="nav-indicator"
+                className="absolute inset-x-0 -bottom-px h-0.5 bg-secondary"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
           </Link>
         );
       })}
