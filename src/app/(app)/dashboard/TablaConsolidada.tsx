@@ -114,15 +114,15 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
           ))}
         </select>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="max-h-[70vh] overflow-y-auto overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-subtle text-text-muted">
-              <th className="px-2 py-2 font-medium">N°</th>
+              <th className="sticky top-0 z-10 bg-bg-subtle px-2 py-2 font-medium">N°</th>
               {COLUMNAS.map((c) => (
                 <th
                   key={c.key}
-                  className="px-2 py-2 font-medium"
+                  className="sticky top-0 z-10 bg-bg-subtle px-2 py-2 font-medium"
                   aria-sort={
                     orden.columna === c.key ? (orden.direccion === "asc" ? "ascending" : "descending") : "none"
                   }
@@ -137,8 +137,8 @@ export function TablaConsolidada({ rows, esDireccion }: TablaConsolidadaProps) {
                   </button>
                 </th>
               ))}
-              <th className="px-2 py-2 font-medium">Semáforo</th>
-              <th className="px-2 py-2 font-medium">Validación</th>
+              <th className="sticky top-0 z-10 bg-bg-subtle px-2 py-2 font-medium">Semáforo</th>
+              <th className="sticky top-0 z-10 bg-bg-subtle px-2 py-2 font-medium">Validación</th>
             </tr>
           </thead>
           <tbody>
