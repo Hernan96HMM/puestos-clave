@@ -5,5 +5,9 @@
 export { auth as proxy } from "./auth";
 
 export const config = {
-  matcher: ["/((?!api/health|login|_next/static|_next/image|favicon.ico).*)"],
+  // `.*\..*` excluye cualquier archivo estático de `public/` (logo, íconos,
+  // etc.) — sin esto, el middleware los interceptaba y redirigía a /login
+  // antes de que el navegador pudiera cargarlos (repro: /sica-logo.png en
+  // el login, donde el usuario todavía no tiene sesión, devolvía 307).
+  matcher: ["/((?!api/health|login|_next/static|_next/image|favicon\\.ico|.*\\..*).*)"],
 };
