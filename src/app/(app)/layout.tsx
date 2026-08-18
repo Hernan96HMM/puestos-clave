@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { query } from "@/lib/db/query";
@@ -29,7 +30,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-bg">
       <header className="border-b border-border bg-bg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-4">
-          <h1 className="text-lg font-bold text-primary">F-116 · Puestos Clave</h1>
+          <div className="flex items-center gap-2">
+            <Image src="/sica-logo.png" alt="SICA" width={90} height={35} priority />
+            <h1 className="text-lg font-bold text-primary">F-116 · Puestos Clave</h1>
+          </div>
           <form
             action={async () => {
               "use server";
