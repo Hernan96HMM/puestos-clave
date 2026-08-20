@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { query } from "@/lib/db/query";
 import { withUserContext } from "@/lib/db/withUserContext";
 
 export interface EvaluacionActionState {
@@ -25,9 +26,6 @@ export async function updateEvaluacionAction(
   if (!session?.user) {
     return { error: "No hay sesión activa." };
   }
-  if (session.user.rol !== "gerente") {
-    return { error: "No tenés permiso para editar esta evaluación." };
-  }
 
   const evaluacionId = formData.get("evaluacionId");
   const slug = formData.get("slug");
@@ -42,6 +40,16 @@ export async function updateEvaluacionAction(
     typeof fechaEvaluacion !== "string"
   ) {
     return { error: "Datos inválidos." };
+  }
+
+  // Con roles múltiples (Fase 3d), "sos gerente" ya no alcanza como chequeo —
+  // hay que confirmar que el sector de ESTA evaluación esté entre los
+  // sectoresGerente del perfil, y usar ESE sector (no un sectorId único de
+  // sesión) al abrir la transacción de abajo.
+  const sectorRows = await query<{ id: string }>("select id from sector where slug = $1", [slug]);
+  const sector = sectorRows[0];
+  if (!sector || !session.user.sectoresGerente.includes(sector.id)) {
+    return { error: "No tenés permiso para editar esta evaluación." };
   }
 
   const preguntaIds = preguntaIdsRaw.split(",").filter(Boolean);
@@ -72,7 +80,7 @@ export async function updateEvaluacionAction(
 
   try {
     await withUserContext(
-      { id: session.user.id, rol: session.user.rol, sectorId: session.user.sectorId },
+      { id: session.user.id, rol: "gerente", sectorId: sector.id },
       async (client) => {
         let count = 0;
         const evalResult = await client.query(
@@ -90,11 +98,10 @@ export async function updateEvaluacionAction(
         }
 
         // Menos filas afectadas que las esperadas (1 de evaluacion + N de
-        // respuestas) = la policy de RLS filtró alguna fila (sector ajeno) sin
-        // lanzar error. Se chequea DENTRO del callback y se lanza para que
-        // withUserContext haga ROLLBACK en vez de COMMIT: si el chequeo viviera
-        // afuera, para cuando corriera el COMMIT ya habría dejado firmes las
-        // filas que sí matchearon, aunque el resto no.
+        // respuestas) = la policy de RLS filtró alguna fila (evaluacionId de
+        // otro sector, tamperado a mano) sin lanzar error. Se chequea DENTRO
+        // del callback y se lanza para que withUserContext haga ROLLBACK en
+        // vez de COMMIT.
         const filasEsperadas = 1 + respuestas.length;
         if (count < filasEsperadas) {
           throw new PermisoError();

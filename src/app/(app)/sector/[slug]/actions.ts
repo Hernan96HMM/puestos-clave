@@ -20,7 +20,7 @@ export async function updateValidacionAction(
   if (!session?.user) {
     return { error: "No hay sesión activa." };
   }
-  if (session.user.rol !== "direccion") {
+  if (!session.user.esDireccion) {
     return { error: "No tenés permiso para editar este campo." };
   }
 
@@ -40,7 +40,7 @@ export async function updateValidacionAction(
   let rows: unknown[];
   try {
     rows = await withUserContext(
-      { id: session.user.id, rol: session.user.rol, sectorId: session.user.sectorId },
+      { id: session.user.id, rol: "direccion", sectorId: null },
       async (client) => {
         const result = await client.query(
           "update validacion_puesto set estado = $1, actualizado_por = $2, actualizado_en = now() where evaluacion_id = $3 returning id",
