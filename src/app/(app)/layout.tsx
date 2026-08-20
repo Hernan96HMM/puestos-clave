@@ -22,9 +22,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const extendido = puedeVerTodo(session.user);
   const sectores = extendido
     ? await query<SectorRow>("select id, nombre, slug, orden from sector order by orden")
-    : await query<SectorRow>("select id, nombre, slug, orden from sector where id = $1", [
-        session.user.sectorId,
-      ]);
+    : await query<SectorRow>(
+        "select id, nombre, slug, orden from sector where id = any($1::uuid[]) order by orden",
+        [session.user.sectoresGerente]
+      );
 
   return (
     <div className="min-h-screen bg-bg">
@@ -47,8 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
         <Navbar
           sectores={sectores}
-          rol={session.user.rol}
-          sectorId={session.user.sectorId}
+          sectoresGerente={session.user.sectoresGerente}
           mostrarDashboard={extendido}
         />
       </header>

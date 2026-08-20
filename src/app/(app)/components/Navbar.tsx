@@ -14,13 +14,11 @@ interface Sector {
 
 export function Navbar({
   sectores,
-  rol,
-  sectorId,
+  sectoresGerente,
   mostrarDashboard,
 }: {
   sectores: Sector[];
-  rol: "gerente" | "direccion";
-  sectorId: string | null;
+  sectoresGerente: string[];
   mostrarDashboard: boolean;
 }) {
   const pathname = usePathname();
@@ -47,7 +45,7 @@ export function Navbar({
         </Link>
       )}
       {sectores.map((sector) => {
-        const isEditable = rol === "gerente" && sectorId === sector.id;
+        const isEditable = sectoresGerente.includes(sector.id);
         const isActive = pathname === `/sector/${sector.slug}`;
         return (
           <Link

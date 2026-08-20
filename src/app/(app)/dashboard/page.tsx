@@ -28,11 +28,12 @@ export default async function DashboardPage() {
   if (!session?.user) return null;
 
   if (!puedeVerTodo(session.user)) {
-    // Gerente sin acceso extendido forzando la URL directamente — la navbar
-    // ya no le muestra este link, pero hay que rechazarlo también acá.
-    const rows = await query<{ slug: string }>("select slug from sector where id = $1", [
-      session.user.sectorId,
-    ]);
+    // Sin rol dirección forzando la URL directamente — la navbar ya no le
+    // muestra este link, pero hay que rechazarlo también acá.
+    const propio = session.user.sectoresGerente[0];
+    const rows = propio
+      ? await query<{ slug: string }>("select slug from sector where id = $1", [propio])
+      : [];
     redirect(`/sector/${rows[0]?.slug ?? ""}`);
   }
 
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <DashboardHeader kpis={kpis} />
       <DashboardCharts distribucion={distribucion} porSector={porSector} />
-      <TablaConsolidada rows={consolidado} esDireccion={session.user.rol === "direccion"} />
+      <TablaConsolidada rows={consolidado} esDireccion={session.user.esDireccion} />
     </div>
   );
 }

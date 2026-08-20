@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { query } from "@/lib/db/query";
-import { puedeVerTodo } from "@/lib/permisos";
 import { Card } from "@/components/ui/Card";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { AnimatedHeadline } from "@/components/ui/AnimatedHeadline";
@@ -56,13 +55,13 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
   const sector = sectorRows[0];
   if (!sector) notFound();
 
-  const isDireccion = session.user.rol === "direccion";
-  const isOwnSector = session.user.rol === "gerente" && session.user.sectorId === sector.id;
+  const isDireccion = session.user.esDireccion;
+  const isOwnSector = session.user.sectoresGerente.includes(sector.id);
 
-  // Gerente sin acceso extendido intentando ver un sector ajeno por URL
+  // Sin rol gerente de ESTE sector ni rol dirección, forzando la URL
   // directa (la navbar de layout.tsx ya no le muestra el link, pero eso no
   // basta como protección — hay que rechazarlo también acá, server-side).
-  if (!isOwnSector && !puedeVerTodo(session.user)) {
+  if (!isOwnSector && !isDireccion) {
     notFound();
   }
 
