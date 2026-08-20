@@ -13,47 +13,37 @@ const USERS = [
   {
     email: "compras@test.local",
     nombre: "Gerente Compras (prueba)",
-    rol: "gerente",
-    sectorSlug: "compras",
     passwordEnv: "SEED_PASSWORD_GERENTE_COMPRAS",
     passwordDefault: "Compras123!",
-    accesoExtendido: false,
+    roles: [{ rol: "gerente", sectorSlug: "compras" }],
   },
   {
     email: "almacenes@test.local",
     nombre: "Gerente Almacenes (prueba)",
-    rol: "gerente",
-    sectorSlug: "almacenes",
     passwordEnv: "SEED_PASSWORD_GERENTE_ALMACENES",
     passwordDefault: "Almacenes123!",
-    accesoExtendido: false,
+    roles: [{ rol: "gerente", sectorSlug: "almacenes" }],
   },
   {
     email: "direccion@test.local",
     nombre: "Dirección (prueba)",
-    rol: "direccion",
-    sectorSlug: null,
     passwordEnv: "SEED_PASSWORD_DIRECCION",
     passwordDefault: "Direccion123!",
-    accesoExtendido: false,
+    roles: [{ rol: "direccion" }],
   },
   {
     email: "rrhh@test.local",
     nombre: "Gerente RRHH (prueba)",
-    rol: "gerente",
-    sectorSlug: "recursos-humanos",
     passwordEnv: "SEED_PASSWORD_GERENTE_RRHH",
     passwordDefault: "RRHH123!",
-    accesoExtendido: true,
+    roles: [{ rol: "gerente", sectorSlug: "recursos-humanos" }, { rol: "direccion" }],
   },
   {
     email: "sig@test.local",
     nombre: "Gerente SIG (prueba)",
-    rol: "gerente",
-    sectorSlug: "sig-y-medio-ambiente",
     passwordEnv: "SEED_PASSWORD_GERENTE_SIG",
     passwordDefault: "Sig123!",
-    accesoExtendido: true,
+    roles: [{ rol: "gerente", sectorSlug: "sig-y-medio-ambiente" }, { rol: "direccion" }],
   },
 ];
 
@@ -63,26 +53,40 @@ async function main() {
     for (const u of USERS) {
       const password = process.env[u.passwordEnv] ?? u.passwordDefault;
       const passwordHash = await bcrypt.hash(password, 10);
-      let sectorId = null;
-      if (u.sectorSlug) {
-        const { rows } = await client.query("select id from sector where slug = $1", [u.sectorSlug]);
-        if (rows.length === 0) {
-          throw new Error(`Sector not found: ${u.sectorSlug}`);
-        }
-        sectorId = rows[0].id;
-      }
-      await client.query(
-        `insert into perfil (email, password_hash, nombre, rol, sector_id, acceso_extendido)
-         values ($1, $2, $3, $4, $5, $6)
+
+      const { rows } = await client.query(
+        `insert into perfil (email, password_hash, nombre)
+         values ($1, $2, $3)
          on conflict (email) do update
            set password_hash = excluded.password_hash,
-               nombre = excluded.nombre,
-               rol = excluded.rol,
-               sector_id = excluded.sector_id,
-               acceso_extendido = excluded.acceso_extendido`,
-        [u.email, passwordHash, u.nombre, u.rol, sectorId, u.accesoExtendido]
+               nombre = excluded.nombre
+         returning id`,
+        [u.email, passwordHash, u.nombre]
       );
-      console.log(`OK: ${u.email} (${u.rol}${u.accesoExtendido ? ", acceso extendido" : ""})`);
+      const perfilId = rows[0].id;
+
+      // Reemplaza todas las filas de rol del perfil por las declaradas acá —
+      // más simple que un upsert por fila con clave compuesta, y esta tabla
+      // solo la escribe este script (nunca la UI).
+      await client.query("delete from perfil_rol where perfil_id = $1", [perfilId]);
+      for (const r of u.roles) {
+        let sectorId = null;
+        if (r.sectorSlug) {
+          const sectorRows = await client.query("select id from sector where slug = $1", [r.sectorSlug]);
+          if (sectorRows.rows.length === 0) {
+            throw new Error(`Sector not found: ${r.sectorSlug}`);
+          }
+          sectorId = sectorRows.rows[0].id;
+        }
+        await client.query("insert into perfil_rol (perfil_id, rol, sector_id) values ($1, $2, $3)", [
+          perfilId,
+          r.rol,
+          sectorId,
+        ]);
+      }
+
+      const rolesDesc = u.roles.map((r) => (r.sectorSlug ? `${r.rol}:${r.sectorSlug}` : r.rol)).join(", ");
+      console.log(`OK: ${u.email} (${rolesDesc})`);
     }
   } finally {
     client.release();
