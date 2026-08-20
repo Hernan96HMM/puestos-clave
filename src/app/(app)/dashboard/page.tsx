@@ -31,9 +31,16 @@ export default async function DashboardPage() {
     // Sin rol dirección forzando la URL directamente — la navbar ya no le
     // muestra este link, pero hay que rechazarlo también acá.
     const propio = session.user.sectoresGerente[0];
-    const rows = propio
-      ? await query<{ slug: string }>("select slug from sector where id = $1", [propio])
-      : [];
+    if (!propio) {
+      // Sin ningún sector gerente tampoco: perfil sin roles asignados, ver
+      // el mismo caso en (app)/page.tsx.
+      return (
+        <p className="text-sm text-text-muted">
+          Tu usuario no tiene ningún rol asignado. Contactá a un administrador.
+        </p>
+      );
+    }
+    const rows = await query<{ slug: string }>("select slug from sector where id = $1", [propio]);
     redirect(`/sector/${rows[0]?.slug ?? ""}`);
   }
 

@@ -132,6 +132,15 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                   }))}
                 />
               </details>
+              {isDireccion && (
+                <div className="mt-3 flex justify-end border-t border-border pt-3">
+                  <ValidacionSelect
+                    evaluacionId={p.evaluacion_id}
+                    estadoActual={p.validacion_direccion}
+                    slug={slug}
+                  />
+                </div>
+              )}
             </Card>
             </AnimatedCard>
           ) : (

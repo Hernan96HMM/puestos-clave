@@ -77,8 +77,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.esDireccion = token.esDireccion;
-        session.user.sectoresGerente = token.sectoresGerente;
+        // `??` protege sesiones JWT emitidas antes de este deploy (sin estos
+        // campos) — sin esto, un cookie viejo produce `undefined` en un campo
+        // tipado boolean/string[], y cualquier página que lo lea (`.includes`,
+        // `[0]`) tira un 500 en vez de degradar a "sin roles".
+        session.user.esDireccion = token.esDireccion ?? false;
+        session.user.sectoresGerente = token.sectoresGerente ?? [];
       }
       return session;
     },
