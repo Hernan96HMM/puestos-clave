@@ -8,9 +8,11 @@ type PerfilRow = {
   id: string;
   password_hash: string;
   nombre: string;
+};
+
+type PerfilRolRow = {
   rol: "gerente" | "direccion";
   sector_id: string | null;
-  acceso_extendido: boolean;
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -28,7 +30,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (typeof email !== "string" || typeof password !== "string") return null;
 
         const rows = await query<PerfilRow>(
-          "select id, password_hash, nombre, rol, sector_id, acceso_extendido from perfil where email = $1",
+          "select id, password_hash, nombre from perfil where email = $1",
           [email]
         );
         const row = rows[0];
@@ -37,13 +39,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, row.password_hash);
         if (!valid) return null;
 
+        // Join a sector para que sectoresGerente salga ya ordenado por
+        // sector.orden — así (app)/page.tsx puede tomar el primero sin
+        // ambigüedad si algún día un perfil tiene más de un sector gerente.
+        const rolesRows = await query<PerfilRolRow>(
+          `select pr.rol, pr.sector_id
+           from perfil_rol pr
+           left join sector s on s.id = pr.sector_id
+           where pr.perfil_id = $1
+           order by s.orden`,
+          [row.id]
+        );
+        const esDireccion = rolesRows.some((r) => r.rol === "direccion");
+        const sectoresGerente = rolesRows
+          .filter((r) => r.rol === "gerente")
+          .map((r) => r.sector_id as string);
+
         return {
           id: row.id,
           email,
           name: row.nombre,
-          rol: row.rol,
-          sectorId: row.sector_id,
-          accesoExtendido: row.acceso_extendido,
+          esDireccion,
+          sectoresGerente,
         };
       },
     }),
@@ -52,18 +69,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
-        token.rol = user.rol;
-        token.sectorId = user.sectorId;
-        token.accesoExtendido = user.accesoExtendido;
+        token.esDireccion = user.esDireccion;
+        token.sectoresGerente = user.sectoresGerente;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.rol = token.rol;
-        session.user.sectorId = token.sectorId;
-        session.user.accesoExtendido = token.accesoExtendido;
+        session.user.esDireccion = token.esDireccion;
+        session.user.sectoresGerente = token.sectoresGerente;
       }
       return session;
     },
