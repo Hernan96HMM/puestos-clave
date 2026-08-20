@@ -1,11 +1,10 @@
 export interface PerfilAcceso {
-  rol: "gerente" | "direccion";
-  accesoExtendido: boolean;
+  esDireccion: boolean;
 }
 
-// Decisión puntual de negocio, no una regla genérica: hoy solo RRHH y SIG y
-// Medio Ambiente tienen accesoExtendido=true (ver scripts/seed-users.mjs).
-// Dirección siempre puede ver todo por su rol, sin necesitar el flag.
+// Con roles múltiples (perfil_rol, Fase 3d), tener el rol dirección ya da
+// acceso a todo — no hace falta un flag aparte como el acceso_extendido
+// de Fase 3c (retirado en esta fase).
 export function puedeVerTodo(user: PerfilAcceso): boolean {
-  return user.rol === "direccion" || user.accesoExtendido;
+  return user.esDireccion;
 }
