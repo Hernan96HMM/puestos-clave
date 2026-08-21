@@ -7,6 +7,7 @@ import { AnimatedHeadline } from "@/components/ui/AnimatedHeadline";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { ValidacionSelect } from "./ValidacionSelect";
 import { PuestoEvaluacionForm } from "./PuestoEvaluacionForm";
+import { SectorTabs } from "./SectorTabs";
 
 type PuestoRow = {
   evaluacion_id: string;
@@ -93,10 +94,8 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
     }
   }
 
-  return (
-    <div>
-      <AnimatedHeadline text={sector.nombre} className="mb-4 text-xl font-bold text-primary" />
-      <div className="flex flex-col gap-3">
+  const listaPuestos = (
+    <div className="flex flex-col gap-3">
         {puestos.map((p) =>
           isOwnSector ? (
             <AnimatedCard key={p.evaluacion_id}>
@@ -164,7 +163,13 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
             </AnimatedCard>
           )
         )}
-      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <AnimatedHeadline text={sector.nombre} className="mb-4 text-xl font-bold text-primary" />
+      {isDireccion ? listaPuestos : <SectorTabs>{listaPuestos}</SectorTabs>}
     </div>
   );
 }
