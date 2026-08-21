@@ -2,10 +2,12 @@
 
 import { useActionState, useState } from "react";
 import { updateEvaluacionAction, type EvaluacionActionState } from "./evaluacionActions";
+import { crearPreguntaPuestoAction, type PreguntaActionState } from "./preguntaActions";
 import { calcularPuntajePonderado } from "@/lib/calculoPuntaje";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface PreguntaRespuesta {
   preguntaId: string;
@@ -24,9 +26,11 @@ interface PuestoEvaluacionFormProps {
   fechaEvaluacion: string | null;
   preguntas: PreguntaRespuesta[];
   readOnly?: boolean;
+  puedeAgregarPregunta?: boolean;
 }
 
 const initialState: EvaluacionActionState = {};
+const initialStatePregunta: PreguntaActionState = {};
 
 // Escala del formulario (sección 2.4 del prompt original F-116):
 // 0 = No aplica el criterio ... 5 = Muy alto, N/A = la pregunta no corresponde a este puesto.
@@ -47,8 +51,14 @@ export function PuestoEvaluacionForm({
   fechaEvaluacion,
   preguntas,
   readOnly = false,
+  puedeAgregarPregunta = false,
 }: PuestoEvaluacionFormProps) {
   const [state, formAction, pending] = useActionState(updateEvaluacionAction, initialState);
+  const [nuevaPreguntaAbierta, setNuevaPreguntaAbierta] = useState(false);
+  const [statePregunta, formActionPregunta, pendingPregunta] = useActionState(
+    crearPreguntaPuestoAction,
+    initialStatePregunta
+  );
   const [respuestas, setRespuestas] = useState(
     preguntas.map((p) => ({
       preguntaId: p.preguntaId,
@@ -76,91 +86,157 @@ export function PuestoEvaluacionForm({
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 pt-4">
-      <input type="hidden" name="evaluacionId" value={evaluacionId} />
-      <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="preguntaIds" value={preguntas.map((p) => p.preguntaId).join(",")} />
+    <div className="flex flex-col gap-4 pt-4">
+      <form action={formAction} className="flex flex-col gap-4">
+        <input type="hidden" name="evaluacionId" value={evaluacionId} />
+        <input type="hidden" name="slug" value={slug} />
+        <input type="hidden" name="preguntaIds" value={preguntas.map((p) => p.preguntaId).join(",")} />
 
-      <div className="flex items-center justify-between rounded-md bg-secondary-bg px-3 py-2">
-        <span className="text-sm font-medium text-secondary-text">Puntaje ponderado (en vivo)</span>
-        <span className="text-lg font-bold text-secondary-text">{puntajeEnVivo.toFixed(1)}%</span>
-      </div>
+        <div className="flex items-center justify-between rounded-md bg-secondary-bg px-3 py-2">
+          <span className="text-sm font-medium text-secondary-text">Puntaje ponderado (en vivo)</span>
+          <span className="text-lg font-bold text-secondary-text">{puntajeEnVivo.toFixed(1)}%</span>
+        </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field
-          label="Evaluador"
-          name="evaluador"
-          id={`evaluador-${evaluacionId}`}
-          defaultValue={evaluador ?? ""}
-          disabled={pending || readOnly}
-        />
-        <Field
-          label="Fecha de evaluación"
-          name="fechaEvaluacion"
-          id={`fechaEvaluacion-${evaluacionId}`}
-          type="date"
-          defaultValue={fechaEvaluacion ?? ""}
-          disabled={pending || readOnly}
-        />
-      </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field
+            label="Evaluador"
+            name="evaluador"
+            id={`evaluador-${evaluacionId}`}
+            defaultValue={evaluador ?? ""}
+            disabled={pending || readOnly}
+          />
+          <Field
+            label="Fecha de evaluación"
+            name="fechaEvaluacion"
+            id={`fechaEvaluacion-${evaluacionId}`}
+            type="date"
+            defaultValue={fechaEvaluacion ?? ""}
+            disabled={pending || readOnly}
+          />
+        </div>
 
-      <div className="flex flex-col gap-4">
-        {preguntas.map((p, i) => {
-          const respuesta = respuestas[i];
-          const requiereJustificacion = respuesta.puntaje !== null && respuesta.puntaje >= 3;
-          return (
-            <div key={p.preguntaId} className="flex flex-col gap-2 border-t border-border pt-3">
-              <p id={`pregunta-${evaluacionId}-${p.preguntaId}`} className="text-sm text-text">
-                <span className="font-medium">{p.numero}.</span> {p.texto}
-              </p>
-              <p className="text-xs text-text-muted">
-                Ref. ISO 9001:2015 {p.refIso} · Peso {p.pesoPct}%
-              </p>
-              <select
-                name={`puntaje_${p.preguntaId}`}
-                value={respuesta.puntaje === null ? "NA" : String(respuesta.puntaje)}
-                onChange={(e) => actualizarPuntaje(p.preguntaId, e.target.value)}
-                disabled={pending || readOnly}
-                aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
-                className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {OPCIONES_PUNTAJE.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+        <div className="flex flex-col gap-4">
+          {preguntas.map((p, i) => {
+            const respuesta = respuestas[i];
+            const requiereJustificacion = respuesta.puntaje !== null && respuesta.puntaje >= 3;
+            return (
+              <div key={p.preguntaId} className="flex flex-col gap-2 border-t border-border pt-3">
+                <p id={`pregunta-${evaluacionId}-${p.preguntaId}`} className="text-sm text-text">
+                  <span className="font-medium">{p.numero}.</span> {p.texto}
+                </p>
+                <p className="text-xs text-text-muted">
+                  Ref. ISO 9001:2015 {p.refIso} · Peso {p.pesoPct}%
+                </p>
+                <select
+                  name={`puntaje_${p.preguntaId}`}
+                  value={respuesta.puntaje === null ? "NA" : String(respuesta.puntaje)}
+                  onChange={(e) => actualizarPuntaje(p.preguntaId, e.target.value)}
+                  disabled={pending || readOnly}
+                  aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
+                  className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {OPCIONES_PUNTAJE.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <Textarea
+                  name={`justificacion_${p.preguntaId}`}
+                  value={respuesta.justificacion}
+                  onChange={(e) => actualizarJustificacion(p.preguntaId, e.target.value)}
+                  required={requiereJustificacion && !readOnly}
+                  disabled={pending || readOnly}
+                  aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
+                  rows={2}
+                  placeholder={
+                    requiereJustificacion
+                      ? "Justificación obligatoria para este puntaje"
+                      : "Justificación (opcional)"
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {!readOnly && state.error && (
+          <p role="alert" className="text-sm text-risk-high">
+            {state.error}
+          </p>
+        )}
+        {!readOnly && state.ok && <p className="text-sm text-risk-low">Guardado.</p>}
+
+        {!readOnly && (
+          <Button type="submit" disabled={pending}>
+            {pending ? "Guardando..." : "Guardar"}
+          </Button>
+        )}
+      </form>
+
+      {puedeAgregarPregunta && (
+        <div className="border-t border-border pt-3">
+          {!nuevaPreguntaAbierta ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setNuevaPreguntaAbierta(true)}
+              className="text-xs"
+            >
+              + Nueva pregunta
+            </Button>
+          ) : (
+            <form action={formActionPregunta} className="flex flex-col gap-2">
+              <input type="hidden" name="evaluacionId" value={evaluacionId} />
+              <input type="hidden" name="slug" value={slug} />
               <Textarea
-                name={`justificacion_${p.preguntaId}`}
-                value={respuesta.justificacion}
-                onChange={(e) => actualizarJustificacion(p.preguntaId, e.target.value)}
-                required={requiereJustificacion && !readOnly}
-                disabled={pending || readOnly}
-                aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
+                name="texto"
+                placeholder="Texto de la pregunta"
+                required
+                disabled={pendingPregunta}
                 rows={2}
-                placeholder={
-                  requiereJustificacion
-                    ? "Justificación obligatoria para este puntaje"
-                    : "Justificación (opcional)"
-                }
               />
-            </div>
-          );
-        })}
-      </div>
-
-      {!readOnly && state.error && (
-        <p role="alert" className="text-sm text-risk-high">
-          {state.error}
-        </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  name="refIso"
+                  placeholder="Ref. ISO (opcional)"
+                  disabled={pendingPregunta}
+                  className="sm:w-1/2"
+                />
+                <Input
+                  name="pesoPct"
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="Peso %"
+                  required
+                  disabled={pendingPregunta}
+                  className="sm:w-1/2"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={pendingPregunta} className="text-xs">
+                  {pendingPregunta ? "Agregando..." : "Agregar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setNuevaPreguntaAbierta(false)}
+                  disabled={pendingPregunta}
+                  className="text-xs"
+                >
+                  Cancelar
+                </Button>
+              </div>
+              {statePregunta.error && (
+                <p role="alert" className="text-xs text-risk-high">
+                  {statePregunta.error}
+                </p>
+              )}
+            </form>
+          )}
+        </div>
       )}
-      {!readOnly && state.ok && <p className="text-sm text-risk-low">Guardado.</p>}
-
-      {!readOnly && (
-        <Button type="submit" disabled={pending}>
-          {pending ? "Guardando..." : "Guardar"}
-        </Button>
-      )}
-    </form>
+    </div>
   );
 }

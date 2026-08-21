@@ -122,6 +122,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                   evaluador={p.evaluador}
                   fechaEvaluacion={p.fecha_evaluacion}
                   readOnly={!isOwnSector}
+                  puedeAgregarPregunta={isDireccion}
                   preguntas={(preguntasPorEvaluacion.get(p.evaluacion_id) ?? []).map((row) => ({
                     preguntaId: row.pregunta_id,
                     numero: row.numero,
