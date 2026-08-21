@@ -72,6 +72,7 @@ async function main() {
   // constraint (evaluacion_id, pregunta_id) de respuesta_pregunta).
   let scratchPuestoId, scratchEvaluacionId;
   await withRollback(async (client) => {
+    await setContext(client, { rol: "direccion", sectorId: null });
     const puestoRows = await client.query(
       `insert into puesto (sector_id, nombre, orden) values ($1, 'Puesto scratch RLS', 999) returning id`,
       [comprasSectorId]
