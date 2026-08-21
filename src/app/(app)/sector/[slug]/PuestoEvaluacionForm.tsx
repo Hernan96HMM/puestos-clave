@@ -125,7 +125,7 @@ export function PuestoEvaluacionForm({
                   <span className="font-medium">{p.numero}.</span> {p.texto}
                 </p>
                 <p className="text-xs text-text-muted">
-                  Ref. ISO 9001:2015 {p.refIso} · Peso {p.pesoPct}%
+                  {p.refIso && `Ref. ISO 9001:2015 ${p.refIso} · `}Peso {p.pesoPct}%
                 </p>
                 <select
                   name={`puntaje_${p.preguntaId}`}
@@ -201,7 +201,7 @@ export function PuestoEvaluacionForm({
                   name="refIso"
                   placeholder="Ref. ISO (opcional)"
                   disabled={pendingPregunta}
-                  className="sm:w-1/2"
+                  className="text-sm sm:w-1/2"
                 />
                 <Input
                   name="pesoPct"
@@ -211,7 +211,7 @@ export function PuestoEvaluacionForm({
                   placeholder="Peso %"
                   required
                   disabled={pendingPregunta}
-                  className="sm:w-1/2"
+                  className="text-sm sm:w-1/2"
                 />
               </div>
               <div className="flex gap-2">

@@ -93,7 +93,7 @@ export function InstruccionesTab() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-primary">Las 10 preguntas y su peso (igual en todos los sectores)</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Las 10 preguntas y su peso (igual en todos los sectores; Dirección puede sumar preguntas puntuales a un puesto específico)</h2>
         <ol className="flex flex-col gap-2">
           {PREGUNTAS.map((p) => (
             <li key={p.n} className="text-sm text-text">

@@ -61,6 +61,11 @@ export async function crearPuestoAction(
         );
         const evaluacionId = evalRows.rows[0].id;
 
+        await client.query(
+          "insert into validacion_puesto (evaluacion_id) values ($1)",
+          [evaluacionId]
+        );
+
         const preguntasGlobales = await client.query<{ id: string }>(
           "select id from pregunta where puesto_id is null"
         );

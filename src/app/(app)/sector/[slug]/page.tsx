@@ -98,54 +98,58 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
   const listaPuestos = (
     <div className="flex flex-col gap-3">
         <NuevoPuestoForm slug={slug} />
-        {puestos.map((p) => (
-          <AnimatedCard key={p.evaluacion_id}>
-            <Card>
-              <details open={puestos.length === 1}>
-                <summary className="cursor-pointer">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-medium text-text">{p.puesto_nombre}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
-                        {p.clasificacion}
+        {puestos.map((p) => {
+          const preguntasDelPuesto = preguntasPorEvaluacion.get(p.evaluacion_id) ?? [];
+          return (
+            <AnimatedCard key={p.evaluacion_id}>
+              <Card>
+                <details open={puestos.length === 1}>
+                  <summary className="cursor-pointer">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="font-medium text-text">{p.puesto_nombre}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
+                          {p.clasificacion}
+                        </Badge>
+                        <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
+                      </div>
+                      <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
+                        {p.validacion_direccion}
                       </Badge>
-                      <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
                     </div>
-                    <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
-                      {p.validacion_direccion}
-                    </Badge>
-                  </div>
-                </summary>
-                <PuestoEvaluacionForm
-                  evaluacionId={p.evaluacion_id}
-                  slug={slug}
-                  evaluador={p.evaluador}
-                  fechaEvaluacion={p.fecha_evaluacion}
-                  readOnly={!isOwnSector}
-                  puedeAgregarPregunta={isDireccion}
-                  preguntas={(preguntasPorEvaluacion.get(p.evaluacion_id) ?? []).map((row) => ({
-                    preguntaId: row.pregunta_id,
-                    numero: row.numero,
-                    texto: row.texto,
-                    refIso: row.ref_iso,
-                    pesoPct: Number(row.peso_pct),
-                    puntaje: row.puntaje,
-                    justificacion: row.justificacion,
-                  }))}
-                />
-              </details>
-              {isDireccion && (
-                <div className="mt-3 flex justify-end border-t border-border pt-3">
-                  <ValidacionSelect
+                  </summary>
+                  <PuestoEvaluacionForm
+                    key={preguntasDelPuesto.map((row) => row.pregunta_id).join(",")}
                     evaluacionId={p.evaluacion_id}
-                    estadoActual={p.validacion_direccion}
                     slug={slug}
+                    evaluador={p.evaluador}
+                    fechaEvaluacion={p.fecha_evaluacion}
+                    readOnly={!isOwnSector}
+                    puedeAgregarPregunta={isDireccion}
+                    preguntas={preguntasDelPuesto.map((row) => ({
+                      preguntaId: row.pregunta_id,
+                      numero: row.numero,
+                      texto: row.texto,
+                      refIso: row.ref_iso,
+                      pesoPct: Number(row.peso_pct),
+                      puntaje: row.puntaje,
+                      justificacion: row.justificacion,
+                    }))}
                   />
-                </div>
-              )}
-            </Card>
-          </AnimatedCard>
-        ))}
+                </details>
+                {isDireccion && (
+                  <div className="mt-3 flex justify-end border-t border-border pt-3">
+                    <ValidacionSelect
+                      evaluacionId={p.evaluacion_id}
+                      estadoActual={p.validacion_direccion}
+                      slug={slug}
+                    />
+                  </div>
+                )}
+              </Card>
+            </AnimatedCard>
+          );
+        })}
     </div>
   );
 

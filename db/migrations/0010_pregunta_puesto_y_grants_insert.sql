@@ -47,3 +47,18 @@ create policy respuesta_pregunta_insert on respuesta_pregunta for insert with ch
 create policy pregunta_insert on pregunta for insert with check (
   current_setting('app.rol', true) = 'direccion'
 );
+
+grant insert on validacion_puesto to puestos_clave_app;
+
+create policy validacion_puesto_insert on validacion_puesto for insert with check (
+  current_setting('app.rol', true) = 'direccion'
+  or (
+    current_setting('app.rol', true) = 'gerente'
+    and exists (
+      select 1 from evaluacion e
+      join puesto p on p.id = e.puesto_id
+      where e.id = validacion_puesto.evaluacion_id
+        and p.sector_id::text = current_setting('app.sector_id', true)
+    )
+  )
+);

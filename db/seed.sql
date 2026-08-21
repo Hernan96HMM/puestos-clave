@@ -124,11 +124,16 @@ insert into pregunta (numero, texto, ref_iso, peso_pct) values
 insert into evaluacion (puesto_id)
 select id from puesto;
 
--- 5. Respuesta_pregunta: una por (evaluacion, pregunta), puntaje en blanco (null = N/A hasta que se responda).
+-- 5. Respuesta_pregunta: una por (evaluacion, pregunta global), puntaje en blanco
+-- (null = N/A hasta que se responda). Solo las preguntas globales (puesto_id is
+-- null) van acá — las preguntas de puesto (agregadas después, en runtime, con
+-- "Nueva pregunta") ya nacen con su propia fila via crearPreguntaPuestoAction,
+-- no deben duplicarse para el resto de los puestos.
 insert into respuesta_pregunta (evaluacion_id, pregunta_id)
 select e.id, pr.id
 from evaluacion e
-cross join pregunta pr;
+cross join pregunta pr
+where pr.puesto_id is null;
 
 -- 6. Datos históricos reales (5 puestos ya evaluados en los Excel de origen).
 -- evaluador, fecha_evaluacion y justificacion quedan en null: así están en el
