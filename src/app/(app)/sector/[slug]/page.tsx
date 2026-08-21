@@ -8,6 +8,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { ValidacionSelect } from "./ValidacionSelect";
 import { PuestoEvaluacionForm } from "./PuestoEvaluacionForm";
 import { SectorTabs } from "./SectorTabs";
+import { NuevoPuestoForm } from "./NuevoPuestoForm";
 
 type PuestoRow = {
   evaluacion_id: string;
@@ -96,6 +97,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
 
   const listaPuestos = (
     <div className="flex flex-col gap-3">
+        <NuevoPuestoForm slug={slug} />
         {puestos.map((p) => (
           <AnimatedCard key={p.evaluacion_id}>
             <Card>
