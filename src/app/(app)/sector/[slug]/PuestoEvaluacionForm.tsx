@@ -23,6 +23,7 @@ interface PuestoEvaluacionFormProps {
   evaluador: string | null;
   fechaEvaluacion: string | null;
   preguntas: PreguntaRespuesta[];
+  readOnly?: boolean;
 }
 
 const initialState: EvaluacionActionState = {};
@@ -45,6 +46,7 @@ export function PuestoEvaluacionForm({
   evaluador,
   fechaEvaluacion,
   preguntas,
+  readOnly = false,
 }: PuestoEvaluacionFormProps) {
   const [state, formAction, pending] = useActionState(updateEvaluacionAction, initialState);
   const [respuestas, setRespuestas] = useState(
@@ -90,7 +92,7 @@ export function PuestoEvaluacionForm({
           name="evaluador"
           id={`evaluador-${evaluacionId}`}
           defaultValue={evaluador ?? ""}
-          disabled={pending}
+          disabled={pending || readOnly}
         />
         <Field
           label="Fecha de evaluación"
@@ -98,7 +100,7 @@ export function PuestoEvaluacionForm({
           id={`fechaEvaluacion-${evaluacionId}`}
           type="date"
           defaultValue={fechaEvaluacion ?? ""}
-          disabled={pending}
+          disabled={pending || readOnly}
         />
       </div>
 
@@ -118,7 +120,7 @@ export function PuestoEvaluacionForm({
                 name={`puntaje_${p.preguntaId}`}
                 value={respuesta.puntaje === null ? "NA" : String(respuesta.puntaje)}
                 onChange={(e) => actualizarPuntaje(p.preguntaId, e.target.value)}
-                disabled={pending}
+                disabled={pending || readOnly}
                 aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
                 className="rounded-md border border-border bg-bg px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -132,8 +134,8 @@ export function PuestoEvaluacionForm({
                 name={`justificacion_${p.preguntaId}`}
                 value={respuesta.justificacion}
                 onChange={(e) => actualizarJustificacion(p.preguntaId, e.target.value)}
-                required={requiereJustificacion}
-                disabled={pending}
+                required={requiereJustificacion && !readOnly}
+                disabled={pending || readOnly}
                 aria-labelledby={`pregunta-${evaluacionId}-${p.preguntaId}`}
                 rows={2}
                 placeholder={
@@ -147,16 +149,18 @@ export function PuestoEvaluacionForm({
         })}
       </div>
 
-      {state.error && (
+      {!readOnly && state.error && (
         <p role="alert" className="text-sm text-risk-high">
           {state.error}
         </p>
       )}
-      {state.ok && <p className="text-sm text-risk-low">Guardado.</p>}
+      {!readOnly && state.ok && <p className="text-sm text-risk-low">Guardado.</p>}
 
-      <Button type="submit" disabled={pending}>
-        {pending ? "Guardando..." : "Guardar"}
-      </Button>
+      {!readOnly && (
+        <Button type="submit" disabled={pending}>
+          {pending ? "Guardando..." : "Guardar"}
+        </Button>
+      )}
     </form>
   );
 }

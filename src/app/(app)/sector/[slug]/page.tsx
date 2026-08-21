@@ -76,7 +76,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
   );
 
   const preguntasPorEvaluacion = new Map<string, PreguntaRow[]>();
-  if (isOwnSector) {
+  if (isOwnSector || isDireccion) {
     const evaluacionIds = puestos.map((p) => p.evaluacion_id);
     const preguntaRows = await query<PreguntaRow>(
       `select rp.evaluacion_id, pr.id as pregunta_id, pr.numero, pr.texto, pr.ref_iso, pr.peso_pct,
@@ -96,9 +96,8 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
 
   const listaPuestos = (
     <div className="flex flex-col gap-3">
-        {puestos.map((p) =>
-          isOwnSector ? (
-            <AnimatedCard key={p.evaluacion_id}>
+        {puestos.map((p) => (
+          <AnimatedCard key={p.evaluacion_id}>
             <Card>
               <details open={puestos.length === 1}>
                 <summary className="cursor-pointer">
@@ -120,6 +119,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                   slug={slug}
                   evaluador={p.evaluador}
                   fechaEvaluacion={p.fecha_evaluacion}
+                  readOnly={!isOwnSector}
                   preguntas={(preguntasPorEvaluacion.get(p.evaluacion_id) ?? []).map((row) => ({
                     preguntaId: row.pregunta_id,
                     numero: row.numero,
@@ -141,28 +141,8 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                 </div>
               )}
             </Card>
-            </AnimatedCard>
-          ) : (
-            <AnimatedCard key={p.evaluacion_id}>
-            <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="font-medium text-text">{p.puesto_nombre}</span>
-              <div className="flex items-center gap-2">
-                <Badge variant={RIESGO_VARIANT[p.nivel_riesgo] ?? "validacion-pendiente"}>
-                  {p.clasificacion}
-                </Badge>
-                <span className="text-sm text-text-muted">{p.puntaje_ponderado_pct}%</span>
-              </div>
-              {isDireccion ? (
-                <ValidacionSelect evaluacionId={p.evaluacion_id} estadoActual={p.validacion_direccion} slug={slug} />
-              ) : (
-                <Badge variant={VALIDACION_VARIANT[p.validacion_direccion] ?? "validacion-pendiente"}>
-                  {p.validacion_direccion}
-                </Badge>
-              )}
-            </Card>
-            </AnimatedCard>
-          )
-        )}
+          </AnimatedCard>
+        ))}
     </div>
   );
 
