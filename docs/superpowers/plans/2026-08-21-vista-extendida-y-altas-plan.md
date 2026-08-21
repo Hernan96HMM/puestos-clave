@@ -751,6 +751,7 @@ Agregar los imports:
 
 ```tsx
 import { crearPreguntaPuestoAction, type PreguntaActionState } from "./preguntaActions";
+import { Input } from "@/components/ui/Input";
 ```
 
 Agregar, junto a `const initialState: EvaluacionActionState = {};`, un segundo estado inicial:
@@ -795,13 +796,13 @@ Después del `</div>` que cierra `<div className="flex flex-col gap-4">` (el que
                 rows={2}
               />
               <div className="flex flex-col gap-2 sm:flex-row">
-                <input
+                <Input
                   name="refIso"
                   placeholder="Ref. ISO (opcional)"
                   disabled={pendingPregunta}
-                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-1/2"
+                  className="sm:w-1/2"
                 />
-                <input
+                <Input
                   name="pesoPct"
                   type="number"
                   min="1"
@@ -809,7 +810,7 @@ Después del `</div>` que cierra `<div className="flex flex-col gap-4">` (el que
                   placeholder="Peso %"
                   required
                   disabled={pendingPregunta}
-                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-1/2"
+                  className="sm:w-1/2"
                 />
               </div>
               <div className="flex gap-2">
