@@ -67,6 +67,26 @@ async function main() {
     setupClient.release();
   }
 
+  // Setup para los tests de INSERT: un puesto de Compras recién creado, sin
+  // usar el que ya trae evaluación con id fijo (evita chocar con la unique
+  // constraint (evaluacion_id, pregunta_id) de respuesta_pregunta).
+  let scratchPuestoId, scratchEvaluacionId;
+  await withRollback(async (client) => {
+    const puestoRows = await client.query(
+      `insert into puesto (sector_id, nombre, orden) values ($1, 'Puesto scratch RLS', 999) returning id`,
+      [comprasSectorId]
+    );
+    scratchPuestoId = puestoRows.rows[0].id;
+    const evalRows = await client.query(
+      `insert into evaluacion (puesto_id) values ($1) returning id`,
+      [scratchPuestoId]
+    );
+    scratchEvaluacionId = evalRows.rows[0].id;
+  });
+  if (!scratchPuestoId) {
+    console.error("No se pudo crear el puesto scratch para los tests de INSERT (el setup corre sin RLS, revisar DATABASE_URL_OWNER vs DATABASE_URL).");
+  }
+
   // 1. Gerente de Compras escribe respuesta_pregunta de un puesto de Compras -> éxito
   await withRollback(async (client) => {
     await setContext(client, { rol: "gerente", sectorId: comprasSectorId });
@@ -144,39 +164,79 @@ async function main() {
     report("7. SELECT funciona sin contexto", Number(rows[0].count) > 0);
   });
 
-  // Los casos 8 y 9 no prueban políticas RLS sino los GRANT del rol
-  // puestos_clave_app: aunque una política dejara pasar la fila, el rol no tiene
-  // INSERT en ninguna tabla ni UPDATE sobre sector/puesto/pregunta. Sin estos
-  // casos, agregar un `insert` de más a la migración 0006 pasaría inadvertido.
-  // Postgres rechaza por privilegios (SQLSTATE 42501) antes de evaluar RLS.
+  // Los casos 8-12 prueban que las políticas de INSERT limitan quién puede insertar qué.
+  // Ahora el rol puestos_clave_app SÍ tiene INSERT en puesto, evaluacion, respuesta_pregunta
+  // y pregunta (migración 0010). Sin estas políticas, cualquier gerente podría insertar
+  // en cualquier sector, y cualquiera podría insertar pregunta. Postgres rechaza por
+  // políticas RLS (SQLSTATE 42501 si no hay match) después de confirmar permisos.
 
-  // 8. INSERT en respuesta_pregunta (el rol no tiene grant de INSERT) -> 42501
+  // 8. Gerente de Compras INSERT puesto en su propio sector -> éxito
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "gerente", sectorId: comprasSectorId });
+    const { rows } = await client.query(
+      `insert into puesto (sector_id, nombre, orden) values ($1, 'Puesto test', 998) returning id`,
+      [comprasSectorId]
+    );
+    report("8. gerente Compras INSERT puesto en su propio sector", rows.length === 1);
+  });
+
+  // 9. Gerente de Compras INSERT puesto en Almacenes -> falla (42501, RLS)
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "gerente", sectorId: comprasSectorId });
+    try {
+      const almacenesSector = await client.query(`select id from sector where slug = 'almacenes'`);
+      await client.query(
+        `insert into puesto (sector_id, nombre, orden) values ($1, 'Puesto test', 998) returning id`,
+        [almacenesSector.rows[0].id]
+      );
+      report("9. gerente Compras NO puede INSERT puesto en Almacenes", false, "el insert tuvo éxito");
+    } catch (error) {
+      report("9. gerente Compras NO puede INSERT puesto en Almacenes", error.code === "42501", `code=${error.code}`);
+    }
+  });
+
+  // 10. Dirección INSERT respuesta_pregunta en el puesto scratch -> éxito
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "direccion", sectorId: null });
+    const { rows } = await client.query(
+      `insert into respuesta_pregunta (evaluacion_id, pregunta_id) values ($1, (select id from pregunta where numero = 1)) returning id`,
+      [scratchEvaluacionId]
+    );
+    report("10. direccion puede INSERT respuesta_pregunta en cualquier sector", rows.length === 1);
+  });
+
+  // 11. Dirección INSERT pregunta (de puesto) -> éxito
+  await withRollback(async (client) => {
+    await setContext(client, { rol: "direccion", sectorId: null });
+    const { rows } = await client.query(
+      `insert into pregunta (numero, texto, ref_iso, peso_pct, puesto_id) values (11, 'Pregunta de prueba', '', 5, $1) returning id`,
+      [scratchPuestoId]
+    );
+    report("11. direccion puede INSERT pregunta de puesto", rows.length === 1);
+  });
+
+  // 12. Gerente INSERT pregunta -> falla (solo direccion puede)
   await withRollback(async (client) => {
     await setContext(client, { rol: "gerente", sectorId: comprasSectorId });
     try {
       await client.query(
-        `insert into respuesta_pregunta (evaluacion_id, pregunta_id, puntaje)
-         values ($1, (select id from pregunta where numero = 1), 3)`,
-        [comprasEvaluacionId]
+        `insert into pregunta (numero, texto, ref_iso, peso_pct, puesto_id) values (12, 'Pregunta de prueba', '', 5, $1) returning id`,
+        [scratchPuestoId]
       );
-      report("8. INSERT en respuesta_pregunta rechazado por falta de grant", false, "el insert tuvo éxito");
+      report("12. gerente NO puede INSERT pregunta", false, "el insert tuvo éxito");
     } catch (error) {
-      report(
-        "8. INSERT en respuesta_pregunta rechazado por falta de grant",
-        error.code === "42501",
-        `code=${error.code}`
-      );
+      report("12. gerente NO puede INSERT pregunta", error.code === "42501", `code=${error.code}`);
     }
   });
 
-  // 9. UPDATE sobre sector (tabla de sólo lectura para el rol) -> 42501
+  // 13. UPDATE sobre sector (tabla de sólo lectura para el rol) -> 42501
   await withRollback(async (client) => {
     await setContext(client, { rol: "direccion", sectorId: null });
     try {
       await client.query("update sector set nombre = 'x' where id = $1", [comprasSectorId]);
-      report("9. UPDATE en sector rechazado por falta de grant", false, "el update tuvo éxito");
+      report("13. UPDATE en sector rechazado por falta de grant", false, "el update tuvo éxito");
     } catch (error) {
-      report("9. UPDATE en sector rechazado por falta de grant", error.code === "42501", `code=${error.code}`);
+      report("13. UPDATE en sector rechazado por falta de grant", error.code === "42501", `code=${error.code}`);
     }
   });
 
